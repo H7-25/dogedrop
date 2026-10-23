@@ -1,0 +1,12 @@
+{
+  "name": "dogedrop-metaldoge",
+  "private": true,
+  "type": "module",
+  "description": "Small HTTPS bridge so a browser wallet can reach the DogecoinVM API.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}

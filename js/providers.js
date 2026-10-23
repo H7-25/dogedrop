@@ -24,9 +24,9 @@
       dogegoPassword: '',
       memetrackerUrl: '',
       vmPreset: 'metaldoge',
-      vmUrl: 'https://metaldoge.com',
+      vmUrl: 'https://vm.dogedrop.org',
       vmBroadcast: 'same',
-      vmBroadcastUrl: 'https://metaldoge.com',
+      vmBroadcastUrl: 'https://vm.dogedrop.org',
     };
   }
 
@@ -72,20 +72,21 @@
 
   function normalizeVm(config) {
     const url = String(config.vmUrl || '').trim().replace(/\/$/, '');
-    if (!config.vmPreset) config.vmPreset = url && url !== 'https://metaldoge.com' ? 'custom' : 'metaldoge';
+    const known = !url || url === 'https://vm.dogedrop.org' || url === 'https://metaldoge.dogedrop.org' || url === 'https://metaldoge.com';
+    if (!config.vmPreset) config.vmPreset = known ? 'metaldoge' : 'custom';
     if (!config.vmBroadcast) config.vmBroadcast = 'same';
-    if (!config.vmUrl) config.vmUrl = 'https://metaldoge.com';
-    if (!config.vmBroadcastUrl) config.vmBroadcastUrl = 'https://metaldoge.com';
+    if (!config.vmUrl || config.vmUrl === 'https://metaldoge.com' || config.vmUrl === 'https://metaldoge.dogedrop.org') config.vmUrl = 'https://vm.dogedrop.org';
+    if (!config.vmBroadcastUrl || config.vmBroadcastUrl === 'https://metaldoge.com' || config.vmBroadcastUrl === 'https://metaldoge.dogedrop.org') config.vmBroadcastUrl = 'https://vm.dogedrop.org';
     return config;
   }
 
   function vmEndpoint(config, kind) {
     if (kind === 'broadcast') {
       if (config.vmBroadcast === 'custom') return vmBase(config.vmBroadcastUrl, 'broadcast');
-      if (config.vmBroadcast === 'metaldoge') return 'https://metaldoge.com';
+      if (config.vmBroadcast === 'metaldoge') return 'https://vm.dogedrop.org';
     }
     if (config.vmPreset === 'custom') return vmBase(config.vmUrl, 'explorer');
-    return 'https://metaldoge.com';
+    return 'https://vm.dogedrop.org';
   }
 
   function hostOf(url) {
@@ -523,7 +524,7 @@
     } catch (error) {
       if (error instanceof TypeError || /Failed to fetch|NetworkError|Load failed/i.test(error.message || '')) {
         const which = kind === 'broadcast' ? 'send address' : 'explorer';
-        throw new Error(`The browser could not reach the DogecoinVM ${which}. It needs HTTPS and a CORS header that allows this page. You can change it in Settings.`);
+        throw new Error(`The browser could not read the DogecoinVM ${which}. It needs HTTPS and a CORS header that allows this page. Host your own, or change it in Settings.`);
       }
       throw error;
     }

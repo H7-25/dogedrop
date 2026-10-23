@@ -81,7 +81,7 @@ dogecoinvm:D...?amount=1.5
 
 `recipientAddress` may be either link. If `dogeAmount` is also set, that amount is used.
 
-DogecoinVM lookups and broadcasts both use [metaldoge.com](https://metaldoge.com/developers) unless the visitor picks a custom address in Settings. Lookup and sending can point at different addresses. Each one must allow the wallet page to call it (a CORS header). A Dogecoin confirmation usually takes 1 to 10 minutes. A DogecoinVM payment is final in about a fifth of a second. The recovery phrase is still created and stored only in the browser. GitHub and the explorer do not receive it.
+DogecoinVM lookups and broadcasts use `https://vm.dogedrop.org` unless the visitor picks a custom address in Settings. That address only forwards the public DogecoinVM API. [metaldoge.com](https://metaldoge.com/) explains the chain, and it does not allow a browser page to call it directly. A Dogecoin confirmation usually takes 1 to 10 minutes. A DogecoinVM payment is final in about a fifth of a second. The recovery phrase stays in the browser. The explorer sees addresses that are looked up, and it never receives keys.
 
 | Call | What the visitor sees |
 | --- | --- |
@@ -101,6 +101,34 @@ These calls match the shape sites used with MyDogeMask (`window.doge`).
 ## Look up coins and send the payment
 
 The default needs no account. [Dogechain](https://dogechain.com/developers/api) supplies the price, recent fees, and payment history. [Blockchair](https://blockchair.com/api/docs) supplies the unspent coins and accepts the signed transaction. BlockCypher is the backup if Blockchair does not answer. Before a public explorer payment is signed, the wallet checks each coin against a second explorer. Nothing is broadcast if they disagree.
+
+## Host your own DogecoinVM bridge
+
+GitHub Pages is a static site. It cannot call [metaldoge.com](https://metaldoge.com/) from the visitor's browser, because that explorer does not send a CORS header. A small Node program in `metaldoge/` fixes that for one website. It listens on `127.0.0.1` and forwards only `/api/info`, `/api/address/D...`, `/api/tx/...`, and a signed payment. It refuses every other path, limits how often one address can call it, and answers only `https://dogedrop.org`, `https://www.dogedrop.org`, and `https://qlpqlp.github.io`.
+
+Hosting your own copy is recommended. Whoever runs the bridge can see the addresses being looked up. Running it yourself, or pointing Settings at your own DogecoinVM node, keeps that list off someone else's server. A serverless page still needs some host that adds the CORS header. The keys are never part of these requests.
+
+On the server:
+
+```bash
+cd metaldoge
+TRUST_PROXY=1 node server.mjs
+```
+
+On Windows, run `set TRUST_PROXY=1` and then `node server.mjs`. Node 18 or newer is enough. There are no packages to install. `TRUST_PROXY=1` counts visitors separately when nginx is the only program that can reach the port. Put TLS in front of it for `vm.dogedrop.org`:
+
+```nginx
+server {
+  server_name vm.dogedrop.org;
+  location / {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $remote_addr;
+  }
+}
+```
+
+To allow another website, start it with `ALLOWED_ORIGINS=https://dogedrop.org,https://example.com`. In the wallet, choose Custom and enter `https://vm.dogedrop.org`, or your own address.
 
 In **Settings** the visitor can switch to:
 
