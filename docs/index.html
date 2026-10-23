@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DogeDrop</title>
+  <meta name="description" content="DogeDrop is a Dogecoin and DogecoinVM wallet. Paste one line on any website or in any app. Keys stay in the visitor's browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DogeDrop">
+  <meta property="og:title" content="DogeDrop">
+  <meta property="og:description" content="A Dogecoin and DogecoinVM wallet for any website or app. Keys stay in the visitor's browser.">
+  <meta property="og:url" content="https://dogedrop.org/">
+  <meta property="og:image" content="https://dogedrop.org/img/dogedrop.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="2642">
+  <meta property="og:image:height" content="1514">
+  <meta property="og:image:alt" content="DogeDrop, a Dogecoin and DogecoinVM wallet">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DogeDrop">
+  <meta name="twitter:description" content="A Dogecoin and DogecoinVM wallet for any website or app. Keys stay in the visitor's browser.">
+  <meta name="twitter:image" content="https://dogedrop.org/img/dogedrop.png">
+  <meta name="twitter:image:alt" content="DogeDrop, a Dogecoin and DogecoinVM wallet">
+  <link rel="icon" href="img/logo.png" type="image/png">
+  <style>
+    html, body { height: 100%; }
+    body { margin: 0; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #f0f9ff 0%, #f9fafb 42%, #f3f4f6 100%); color: #0f172a; overflow: hidden; }
+    button, input { font: inherit; }
+    button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; border-radius: 0; border: 1px solid #cbd5e1; background: #fff; padding: 6px 12px; cursor: pointer; }
+    button.primary { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 700; }
+    .mi { font-family: "Material Symbols Outlined"; font-weight: 500; font-style: normal; font-size: 20px; line-height: 1; letter-spacing: normal; display: inline-block; white-space: nowrap; font-feature-settings: "liga"; }
+    main { box-sizing: border-box; height: 100dvh; max-width: 1100px; margin: 0 auto; padding: 10px 14px 64px; display: grid; grid-template-columns: 1.2fr 0.8fr; grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
+    header { grid-column: 1 / -1; }
+    h1 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 26px; }
+    h1 img { width: 36px; height: 36px; border-radius: 0; display: block; }
+    header p, .card p { margin: 4px 0; font-size: 14px; line-height: 1.35; }
+    h2 { margin: 0 0 4px; font-size: 16px; }
+    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 0; padding: 10px 12px; min-height: 0; overflow: auto; }
+    input { min-height: 40px; border-radius: 0; border: 1px solid #cbd5e1; padding: 6px 10px; width: 120px; font-family: "Roboto Mono", ui-monospace, monospace; font-size: 16px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+    code, pre { font-family: "Roboto Mono", ui-monospace, monospace; }
+    code { word-break: break-all; }
+    pre { background: #fff; border: 1px solid #cbd5e1; border-radius: 0; padding: 8px 10px; overflow: auto; font-size: 12px; line-height: 1.4; white-space: pre-wrap; margin: 6px 0; }
+    .chains { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    button.chain { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px 10px; border-radius: 0; text-align: left; width: 100%; justify-content: flex-start; }
+    button.chain strong { display: block; font-size: 14px; }
+    button.chain .num { display: block; color: #475569; font-size: 12px; font-family: "Roboto Mono", ui-monospace, monospace; }
+    button.chain.active { border-color: #2563eb; background: #eff6ff; }
+    #status { margin-top: 0; }
+    a { color: #1e40af; }
+    .help { margin: 6px 0 0; font-size: 13px; line-height: 1.35; color: #475569; }
+    .caution { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 18px; background: rgba(15, 23, 42, 0.72); }
+    .caution[hidden] { display: none; }
+    .caution-card { width: min(440px, 100%); background: #fff; border: 1px solid #cbd5e1; border-radius: 0; padding: 22px 18px; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18); }
+    .caution-card img { width: 56px; height: 56px; border-radius: 0; display: block; }
+    .caution-card h2 { margin: 12px 0 8px; font-size: 22px; }
+    .caution-card .primary { width: 100%; margin-top: 8px; }
+    @media (max-width: 640px) {
+      body { overflow: auto; }
+      main { height: auto; grid-template-columns: 1fr; }
+    }
+  </style>
+  <script>
+    (function () {
+      var src = new URL('wallet/connect.js', location.href).href;
+      var fonts = new URL('wallet/css/fonts/', location.href).href;
+      var face = document.createElement('style');
+      face.textContent = '@font-face{font-family:"Inter";font-weight:400 700;font-style:normal;font-display:swap;src:url("' + fonts + 'inter-latin.woff2") format("woff2");}'
+        + '@font-face{font-family:"Roboto Mono";font-weight:500 700;font-style:normal;font-display:swap;src:url("' + fonts + 'roboto-mono-latin.woff2") format("woff2");}'
+        + '@font-face{font-family:"Material Symbols Outlined";font-weight:500;font-style:normal;font-display:block;src:url("' + fonts + 'material-symbols.woff2") format("woff2");}';
+      document.head.appendChild(face);
+      document.write('<script src="' + src + '" data-label="DogeWallet"><' + '/script>');
+    })();
+  </script>
+</head>
+<body>
+  <div id="caution" class="caution" role="dialog" aria-modal="true" aria-labelledby="caution-title">
+    <div class="caution-card">
+      <img src="img/logo.png" alt="">
+      <h2 id="caution-title">Read this first</h2>
+      <p>DogeDrop has not been audited. Be careful. Test with a small amount only. A payment cannot be undone, and coins can be lost if something goes wrong.</p>
+      <button id="dismiss-caution" class="primary" type="button"><span class="mi" aria-hidden="true">check</span><span>I understand</span></button>
+    </div>
+  </div>
+  <main>
+    <header>
+      <h1><img src="img/logo.png" alt="">DogeDrop</h1>
+      <p>This page does not store keys. Paste the line below on any website or in any app. The wallet program is at <a href="https://dogedrop.org/wallet/">dogedrop.org/wallet</a>. Keys stay in the visitor's browser. This page is the guide. The button shows if this site may see the address. Every payment still asks.</p>
+    </header>
+    <div class="card">
+      <h2>Add it to a website or an app</h2>
+      <pre id="snippet"></pre>
+      <button id="copy-snippet" class="primary" type="button"><span class="mi" aria-hidden="true">content_copy</span><span>Copy snippet</span></button>
+      <p id="snippet-note"></p>
+      <p>DogecoinVM is a Dogecoin-compatible chain. It uses the same kind of address, and the coins are separate. <code>dogecoin:D...?amount=1.5</code> pays Dogecoin, usually in 1 to 10 minutes. <code>dogecoinvm:D...?amount=1.5</code> pays DogecoinVM, final in about a fifth of a second. <a href="https://metaldoge.com/" target="_blank" rel="noopener">metaldoge.com</a> explains what it is and how to use it.</p>
+      <pre>const linked = await doge.connect();
+const sent = await doge.requestTransaction({
+  recipientAddress: 'dogecoinvm:D...?amount=1.5'
+});</pre>
+    </div>
+    <div class="card">
+      <p id="status">Looking for the wallet…</p>
+      <div class="row">
+        <button id="connect" class="primary" type="button"><span class="mi" aria-hidden="true">link</span><span>Connect</span></button>
+      </div>
+      <h2>Try a tip</h2>
+      <p>A test payment goes to <code>DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n</code>.</p>
+      <div class="chains" id="tip-chains">
+        <button type="button" class="chain active" data-chain="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong>Dogecoin</strong><span class="num">1 to 10 minutes</span></span></button>
+        <button type="button" class="chain" data-chain="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong>DogecoinVM</strong><span class="num">About 0.2 seconds</span></span></button>
+      </div>
+      <p id="tip-time">A Dogecoin confirmation usually takes 1 to 10 minutes.</p>
+      <p class="help">New to DogecoinVM? Same address, separate coins. <a href="https://metaldoge.com/" target="_blank" rel="noopener">How to use it</a></p>
+      <div class="row">
+        <input id="amount" data-amount="1" inputmode="decimal" value="1" aria-label="Amount in DOGE">
+        <button id="tip" class="primary" type="button"><span class="mi" aria-hidden="true">send</span><span>Send on Dogecoin</span></button>
+      </div>
+      <p id="result"></p>
+    </div>
+  </main>
+  <script>
+    const tipTo = 'DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n';
+
+    function setLabeled(id, glyph, label) {
+      const button = document.getElementById(id);
+      button.innerHTML = '<span class="mi" aria-hidden="true">' + glyph + '</span><span>' + label + '</span>';
+    }
+    const status = document.getElementById('status');
+    const result = document.getElementById('result');
+    const walletHost = 'https://dogedrop.org/wallet/';
+    const snippet = '<script src="' + walletHost + 'connect.js" data-label="DogeWallet"><' + '/script>';
+    document.getElementById('snippet').textContent = snippet;
+    document.getElementById('snippet-note').textContent = 'Paste that line on any website or in any app. Another site loads the wallet from dogedrop.org/wallet, so that site cannot read the keys. This guide is on the same address, and the wallet says so.';
+
+    const caution = document.getElementById('caution');
+    try { if (localStorage.getItem('dogedrop.caution.demo.v1') === '1') caution.hidden = true; } catch { /* Show the warning when storage is blocked. */ }
+    document.getElementById('dismiss-caution').addEventListener('click', () => {
+      try { localStorage.setItem('dogedrop.caution.demo.v1', '1'); } catch { /* Closed for this visit only. */ }
+      caution.hidden = true;
+    });
+
+    async function showStatus() {
+      const connection = await window.doge.getConnectionStatus();
+      if (!connection.connected) {
+        status.textContent = 'Wallet ready. Connect it to this page.';
+        setLabeled('connect', 'link', 'Connect');
+        return;
+      }
+      const balance = await window.doge.getBalance();
+      const vmLine = balance.balanceVmDoge == null ? 'DogecoinVM balance not loaded yet' : ('DogecoinVM ' + balance.balanceVmDoge + ' DOGE');
+      status.innerHTML = 'Connected<br><code>' + connection.address + '</code><br>Dogecoin ' + balance.balanceDoge + ' DOGE<br>' + vmLine;
+      setLabeled('connect', 'close', 'Disconnect');
+    }
+
+    document.getElementById('amount').addEventListener('input', (event) => {
+      const field = event.target;
+      const cleaned = field.value.replace(/[^\d.]/g, '');
+      const parts = cleaned.split('.');
+      field.value = parts.length < 2 ? parts[0] : parts[0] + '.' + parts.slice(1).join('').slice(0, 8);
+    });
+
+    window.addEventListener('doge#initialized', () => { showStatus().catch((error) => { status.textContent = error.message; }); });
+    if (window.doge) {
+      window.doge.on('connect', () => { showStatus().catch(() => {}); });
+      window.doge.on('disconnect', () => { showStatus().catch(() => {}); });
+    }
+
+    document.getElementById('copy-snippet').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(snippet);
+      } catch {
+        const area = document.createElement('textarea');
+        area.value = snippet;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }
+      setLabeled('copy-snippet', 'check', 'Copied');
+      setTimeout(() => { setLabeled('copy-snippet', 'content_copy', 'Copy snippet'); }, 1500);
+    });
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      try {
+        const connection = await window.doge.getConnectionStatus();
+        if (connection.connected) await window.doge.disconnect();
+        else await window.doge.connect();
+        await showStatus();
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    function selectedChain() {
+      const active = document.querySelector('#tip-chains .chain.active');
+      return active && active.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+    }
+
+    document.getElementById('tip-chains').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-chain]');
+      if (!button) return;
+      document.querySelectorAll('#tip-chains .chain').forEach((item) => item.classList.toggle('active', item === button));
+      const vm = button.dataset.chain === 'dogecoinvm';
+      document.getElementById('tip-time').textContent = vm
+        ? 'A DogecoinVM payment is final in about a fifth of a second.'
+        : 'A Dogecoin confirmation usually takes 1 to 10 minutes.';
+      setLabeled('tip', 'send', vm ? 'Send on DogecoinVM' : 'Send on Dogecoin');
+    });
+
+    document.getElementById('tip').addEventListener('click', async () => {
+      const chain = selectedChain();
+      const amount = document.getElementById('amount').value;
+      const request = chain + ':' + tipTo + '?amount=' + encodeURIComponent(amount);
+      result.textContent = 'Waiting for you to approve the payment…';
+      try {
+        const sent = await window.doge.requestTransaction({ recipientAddress: request });
+        const href = chain === 'dogecoinvm'
+          ? 'https://metaldoge.com/api/tx/' + sent.txid
+          : 'https://dogechain.com/tx/' + sent.txid;
+        const name = chain === 'dogecoinvm' ? 'DogecoinVM' : 'Dogecoin';
+        result.innerHTML = 'Sent on ' + name + '. <a href="' + href + '" target="_blank" rel="noopener">View payment</a>';
+        await showStatus();
+      } catch (error) {
+        result.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
