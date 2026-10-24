@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>DogeDrop</title>
   <meta name="description" content="DogeDrop is a Dogecoin and DogecoinVM wallet. Paste one line on any website or in any app. Keys stay in the visitor's browser.">
   <meta property="og:type" content="website">
@@ -22,41 +22,63 @@
   <meta name="twitter:image:alt" content="DogeDrop, a Dogecoin and DogecoinVM wallet">
   <link rel="icon" href="img/logo.png" type="image/png">
   <style>
-    html, body { height: 100%; }
-    body { margin: 0; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #f0f9ff 0%, #f9fafb 42%, #f3f4f6 100%); color: #0f172a; overflow: hidden; }
+    html { height: 100%; }
+    body { margin: 0; min-height: 100%; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #e8f3ff 0%, #f8fafc 38%, #eef2f6 100%); color: #0f172a; }
     button, input { font: inherit; }
-    button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; border-radius: 0; border: 1px solid #cbd5e1; background: #fff; padding: 6px 12px; cursor: pointer; }
+    button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; padding: 8px 14px; cursor: pointer; }
     button.primary { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 700; }
     .mi { font-family: "Material Symbols Outlined"; font-weight: 500; font-style: normal; font-size: 20px; line-height: 1; letter-spacing: normal; display: inline-block; white-space: nowrap; font-feature-settings: "liga"; }
-    main { box-sizing: border-box; height: 100dvh; max-width: 1100px; margin: 0 auto; padding: 10px 14px 64px; display: grid; grid-template-columns: 1.2fr 0.8fr; grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
-    header { grid-column: 1 / -1; }
-    h1 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 26px; }
-    h1 img { width: 36px; height: 36px; border-radius: 0; display: block; }
-    header p, .card p { margin: 4px 0; font-size: 14px; line-height: 1.35; }
-    h2 { margin: 0 0 4px; font-size: 16px; }
-    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 0; padding: 10px 12px; min-height: 0; overflow: auto; }
-    input { min-height: 40px; border-radius: 0; border: 1px solid #cbd5e1; padding: 6px 10px; width: 120px; font-family: "Roboto Mono", ui-monospace, monospace; font-size: 16px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+    .page { box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 28px 18px 112px; }
+    .hero { display: flex; align-items: center; gap: 14px; }
+    .hero img { width: 56px; height: 56px; display: block; border-radius: 14px; }
+    h1 { margin: 0; font-size: 34px; letter-spacing: -0.03em; line-height: 1; }
+    .hero p { margin: 6px 0 0; color: #475569; font-size: 16px; line-height: 1.4; }
+    .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 18px; margin-top: 16px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05); }
+    .kicker { margin: 0 0 4px; color: #2563eb; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.02em; }
+    p { margin: 0; font-size: 15px; line-height: 1.45; }
+    .hint { margin-top: 10px; color: #475569; font-size: 14px; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; }
+    #status { display: grid; gap: 3px; min-width: 0; }
+    #status strong { font-size: 16px; }
+    #status code, #status span { color: #475569; font-size: 13px; }
+    .steps { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
+    .steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: center; }
+    .steps b { width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; color: #1d4ed8; display: grid; place-items: center; font-size: 13px; }
     code, pre { font-family: "Roboto Mono", ui-monospace, monospace; }
     code { word-break: break-all; }
-    pre { background: #fff; border: 1px solid #cbd5e1; border-radius: 0; padding: 8px 10px; overflow: auto; font-size: 12px; line-height: 1.4; white-space: pre-wrap; margin: 6px 0; }
-    .chains { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-    button.chain { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px 10px; border-radius: 0; text-align: left; width: 100%; justify-content: flex-start; }
-    button.chain strong { display: block; font-size: 14px; }
-    button.chain .num { display: block; color: #475569; font-size: 12px; font-family: "Roboto Mono", ui-monospace, monospace; }
-    button.chain.active { border-color: #2563eb; background: #eff6ff; }
-    #status { margin-top: 0; }
+    pre { background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 12px 14px; overflow: auto; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; margin: 12px 0; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .fact { border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; background: #f8fafc; }
+    .fact strong { display: block; margin-bottom: 2px; }
+    .fact span { color: #475569; font-size: 13px; }
     a { color: #1e40af; }
-    .help { margin: 6px 0 0; font-size: 13px; line-height: 1.35; color: #475569; }
-    .caution { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 18px; background: rgba(15, 23, 42, 0.72); }
+    .chains { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    button.chain { display: flex; align-items: center; gap: 8px; min-height: 58px; padding: 8px 10px; border-radius: 14px; text-align: left; width: 100%; justify-content: flex-start; background: #f8fafc; }
+    button.chain strong { display: block; font-size: 14px; }
+    button.chain .num { display: block; color: #475569; font-size: 12px; font-weight: 500; }
+    button.chain.active { border-color: #2563eb; background: #eff6ff; }
+    .pay { display: flex; gap: 8px; margin-top: 12px; }
+    input { min-height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; padding: 8px 12px; width: 120px; font-family: "Roboto Mono", ui-monospace, monospace; font-size: 16px; }
+    #result { margin-top: 10px; }
+    .site-foot { margin-top: 28px; display: grid; justify-items: center; gap: 14px; text-align: center; color: #64748b; font-size: 14px; }
+    .site-foot a { color: #1e40af; font-weight: 700; text-decoration: none; }
+    a.github { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; background: #0f172a; color: #fff; }
+    a.github svg { width: 18px; height: 18px; display: block; }
+    .caution { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 18px; background: rgba(15, 23, 42, 0.55); }
     .caution[hidden] { display: none; }
-    .caution-card { width: min(440px, 100%); background: #fff; border: 1px solid #cbd5e1; border-radius: 0; padding: 22px 18px; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18); }
-    .caution-card img { width: 56px; height: 56px; border-radius: 0; display: block; }
+    .caution-card { width: min(420px, 100%); background: #fff; border-radius: 20px; padding: 22px 18px; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2); }
+    .caution-card img { width: 56px; height: 56px; border-radius: 14px; display: block; }
     .caution-card h2 { margin: 12px 0 8px; font-size: 22px; }
-    .caution-card .primary { width: 100%; margin-top: 8px; }
-    @media (max-width: 640px) {
-      body { overflow: auto; }
-      main { height: auto; grid-template-columns: 1fr; }
+    .caution-card p { color: #334155; }
+    .caution-card .primary { width: 100%; margin-top: 16px; }
+    @media (max-width: 560px) {
+      .page { padding: 20px 14px 120px; }
+      h1 { font-size: 28px; }
+      .hero img { width: 48px; height: 48px; }
+      .status-row, .pay { flex-direction: column; align-items: stretch; }
+      .status-row button, .pay button, .pay input { width: 100%; }
+      .facts, .chains { grid-template-columns: 1fr; }
     }
   </style>
   <script>
@@ -81,41 +103,76 @@
       <button id="dismiss-caution" class="primary" type="button"><span class="mi" aria-hidden="true">check</span><span>I understand</span></button>
     </div>
   </div>
-  <main>
-    <header>
-      <h1><img src="img/logo.png" alt="">DogeDrop</h1>
-      <p>This page does not store keys. Paste the line below on any website or in any app. The wallet program is at <a href="https://dogedrop.org/wallet/">dogedrop.org/wallet</a>. Keys stay in the visitor's browser. This page is the guide. The button shows if this site may see the address. Every payment still asks.</p>
+  <main class="page">
+    <header class="hero">
+      <img src="img/logo.png" alt="">
+      <div>
+        <h1>DogeDrop</h1>
+        <p>A Dogecoin wallet for any website. The keys stay in the visitor's browser.</p>
+      </div>
     </header>
-    <div class="card">
-      <h2>Add it to a website or an app</h2>
+
+    <section class="panel" aria-labelledby="here-title">
+      <p class="kicker">This page</p>
+      <h2 id="here-title">Try the button</h2>
+      <p>Connect shares the address with this page. Every payment still asks first.</p>
+      <div class="status-row">
+        <p id="status">Looking for the wallet…</p>
+        <button id="connect" class="primary" type="button"><span class="mi" aria-hidden="true">link</span><span>Connect</span></button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="add-title">
+      <p class="kicker">For a website</p>
+      <h2 id="add-title">Paste one line</h2>
+      <ol class="steps">
+        <li><b>1</b><span>Add the line before the end of the page.</span></li>
+        <li><b>2</b><span>A wallet button appears for the visitor.</span></li>
+        <li><b>3</b><span>Your site asks. The visitor approves.</span></li>
+      </ol>
       <pre id="snippet"></pre>
       <button id="copy-snippet" class="primary" type="button"><span class="mi" aria-hidden="true">content_copy</span><span>Copy snippet</span></button>
-      <p id="snippet-note"></p>
-      <p>DogecoinVM is a Dogecoin-compatible chain. It uses the same kind of address, and the coins are separate. <code>dogecoin:D...?amount=1.5</code> pays Dogecoin, usually in 1 to 10 minutes. <code>dogecoinvm:D...?amount=1.5</code> pays DogecoinVM, final in about a fifth of a second. <a href="https://metaldoge.com/" target="_blank" rel="noopener">metaldoge.com</a> explains what it is and how to use it.</p>
+      <p id="snippet-note" class="hint"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="pay-title">
+      <p class="kicker">Payments</p>
+      <h2 id="pay-title">Same address, two chains</h2>
+      <div class="facts">
+        <div class="fact"><strong>Dogecoin</strong><span>Usually confirms in 1 to 10 minutes.</span></div>
+        <div class="fact"><strong>DogecoinVM</strong><span>Final in about a fifth of a second.</span></div>
+      </div>
+      <p class="hint">The address looks the same. The coins are separate. <a href="https://metaldoge.com/" target="_blank" rel="noopener">What DogecoinVM is</a></p>
       <pre>const linked = await doge.connect();
 const sent = await doge.requestTransaction({
   recipientAddress: 'dogecoinvm:D...?amount=1.5'
 });</pre>
-    </div>
-    <div class="card">
-      <p id="status">Looking for the wallet…</p>
-      <div class="row">
-        <button id="connect" class="primary" type="button"><span class="mi" aria-hidden="true">link</span><span>Connect</span></button>
-      </div>
-      <h2>Try a tip</h2>
-      <p>A test payment goes to <code>DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n</code>.</p>
+      <p class="hint"><code>dogecoin:</code> pays Dogecoin. <code>dogecoinvm:</code> pays DogecoinVM.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="tip-title">
+      <p class="kicker">Demo</p>
+      <h2 id="tip-title">Send a test tip</h2>
+      <p>This sends to <code>DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n</code>.</p>
       <div class="chains" id="tip-chains">
         <button type="button" class="chain active" data-chain="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong>Dogecoin</strong><span class="num">1 to 10 minutes</span></span></button>
         <button type="button" class="chain" data-chain="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong>DogecoinVM</strong><span class="num">About 0.2 seconds</span></span></button>
       </div>
-      <p id="tip-time">A Dogecoin confirmation usually takes 1 to 10 minutes.</p>
-      <p class="help">New to DogecoinVM? Same address, separate coins. <a href="https://metaldoge.com/" target="_blank" rel="noopener">How to use it</a></p>
-      <div class="row">
+      <p id="tip-time" class="hint">A Dogecoin confirmation usually takes 1 to 10 minutes.</p>
+      <div class="pay">
         <input id="amount" data-amount="1" inputmode="decimal" value="1" aria-label="Amount in DOGE">
         <button id="tip" class="primary" type="button"><span class="mi" aria-hidden="true">send</span><span>Send on Dogecoin</span></button>
       </div>
       <p id="result"></p>
-    </div>
+    </section>
+
+    <footer class="site-foot">
+      <p>The wallet by itself is at <a href="wallet/">dogedrop.org/wallet</a>.</p>
+      <a class="github" href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>Open source on GitHub</span>
+      </a>
+    </footer>
   </main>
   <script>
     const tipTo = 'DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n';
@@ -129,7 +186,7 @@ const sent = await doge.requestTransaction({
     const walletHost = 'https://dogedrop.org/wallet/';
     const snippet = '<script src="' + walletHost + 'connect.js" data-label="DogeWallet"><' + '/script>';
     document.getElementById('snippet').textContent = snippet;
-    document.getElementById('snippet-note').textContent = 'Paste that line on any website or in any app. Another site loads the wallet from dogedrop.org/wallet, so that site cannot read the keys. This guide is on the same address, and the wallet says so.';
+    document.getElementById('snippet-note').textContent = 'The wallet loads from dogedrop.org/wallet, so another site cannot read the keys. This guide is on the same address, and the wallet says so.';
 
     const caution = document.getElementById('caution');
     try { if (localStorage.getItem('dogedrop.caution.demo.v1') === '1') caution.hidden = true; } catch { /* Show the warning when storage is blocked. */ }
@@ -141,13 +198,13 @@ const sent = await doge.requestTransaction({
     async function showStatus() {
       const connection = await window.doge.getConnectionStatus();
       if (!connection.connected) {
-        status.textContent = 'Wallet ready. Connect it to this page.';
+        status.textContent = 'Not connected to this page.';
         setLabeled('connect', 'link', 'Connect');
         return;
       }
       const balance = await window.doge.getBalance();
       const vmLine = balance.balanceVmDoge == null ? 'DogecoinVM balance not loaded yet' : ('DogecoinVM ' + balance.balanceVmDoge + ' DOGE');
-      status.innerHTML = 'Connected<br><code>' + connection.address + '</code><br>Dogecoin ' + balance.balanceDoge + ' DOGE<br>' + vmLine;
+      status.innerHTML = '<strong>Connected</strong><code>' + connection.address + '</code><span>Dogecoin ' + balance.balanceDoge + ' DOGE</span><span>' + vmLine + '</span>';
       setLabeled('connect', 'close', 'Disconnect');
     }
 

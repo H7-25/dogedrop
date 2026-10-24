@@ -5,6 +5,7 @@
   const CAUTION_KEY = 'dogedrop.caution.wallet.v1';
   const SITES_KEY = 'doge-pocket.sites.v1';
   const embed = new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window;
+  if (embed) document.documentElement.classList.add('is-embed');
 
   const state = {
     screen: 'boot',
@@ -356,7 +357,15 @@
     'edit-send': () => go('send'),
     receive: () => go('receive'),
     activity: () => go('activity'),
-    settings: () => go('settings'),
+    settings: () => {
+      state.settingsTab = state.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+      go('settings');
+    },
+    'settings-tab': (button) => {
+      readSettings();
+      state.settingsTab = button.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+      render();
+    },
     backup: () => { state.unlockNext = 'backup'; if (!state.secret) return go('unlock'); go('backup'); },
     'fee': (button) => {
       state.draft.fee = button.dataset.fee;
@@ -790,12 +799,21 @@
   }
 
   function render() {
+    const previous = state.painted;
     const screen = {
       caution, welcome, access, password, reveal, confirm, restore, home, send, review, receive, activity, settings, backup, unlock, approve, 'pay-choice': payChoice,
     }[state.screen] || welcome;
     app.innerHTML = screen();
-    const field = app.querySelector('input:not([readonly]), textarea');
-    if (field && state.screen !== 'home' && state.screen !== 'receive') field.focus();
+    const view = app.querySelector('.screen');
+    const tab = state.settingsTab === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+    const opened = previous !== state.screen || (state.screen === 'settings' && state.paintedTab !== tab);
+    state.painted = state.screen;
+    state.paintedTab = tab;
+    if (opened && view) view.scrollTop = 0;
+    const field = app.querySelector('.screen input:not([readonly]):not(#delete-address), .screen textarea');
+    const keepTop = state.screen === 'home' || state.screen === 'receive' || state.screen === 'activity' || state.screen === 'settings';
+    if (field && !keepTop) field.focus({ preventScroll: true });
+    if (opened && view) view.scrollTop = 0;
   }
 
   function icon(name) {
@@ -824,9 +842,39 @@
       ? `<div class="banner">${icon('shield')}<span>This site is hosting the wallet itself, so its scripts can reach the wallet. For a real integration, load the wallet from its own address.</span></div>`
       : '';
     const heading = title ? `<h1>${glyph ? icon(glyph) : ''}<span>${esc(title)}</span></h1>` : '';
-    const close = embed ? `<button class="ghost" data-action="close-panel">${icon('close')}<span>Close</span></button>` : '';
+    const status = walletStatus();
+    const tools = state.pub && state.screen !== 'caution';
+    const here = ['home', 'send', 'receive', 'activity', 'settings'].includes(state.screen) ? state.screen : 'home';
+    const refresh = tools ? `<button class="icon-btn" type="button" data-action="refresh" aria-label="Refresh">${icon('refresh')}</button>` : '';
+    const lock = !tools ? '' : state.secret
+      ? `<button class="icon-btn" type="button" data-action="lock" aria-label="Lock">${icon('lock')}</button>`
+      : `<button class="icon-btn" type="button" data-action="go-unlock" data-next="${here}" aria-label="Unlock">${icon('lock_open')}</button>`;
+    const close = embed ? `<button class="icon-btn" type="button" data-action="close-panel" aria-label="Close">${icon('close')}</button>` : '';
     const brand = embed ? 'DogeWallet' : 'DogeDrop';
-    return `<header class="top"><div class="brand"><img class="logo" src="img/logo.png" alt=""><div>${brand}</div></div>${host ? `<div class="site">${esc(host)}</div>` : ''}${close}</header>${sameOrigin}${heading}${banners()}${body}`;
+    const hostBit = host ? `<span class="host">${esc(host)}</span>` : '';
+    return `<header class="top"><div class="brand"><img class="logo" src="img/logo.png" alt=""><div class="brand-text"><strong>${brand}</strong><span class="brand-meta"><span class="pill ${status.cls}">${esc(status.text)}</span>${hostBit}</span></div></div><div class="top-actions">${refresh}${lock}${close}</div></header><div class="screen">${sameOrigin}${heading}${banners()}${body}</div>${tabBar()}`;
+  }
+
+  function walletStatus() {
+    if (!state.pub) return { cls: '', text: 'New' };
+    const linked = !!(embed && state.parentOrigin && state.sites[state.parentOrigin]?.connected);
+    if (!state.secret) return { cls: 'wait', text: 'Locked' };
+    if (linked) return { cls: 'on', text: 'Connected' };
+    return { cls: 'on', text: 'Unlocked' };
+  }
+
+  function tabBar() {
+    if (!state.pub) return '';
+    const hidden = ['caution', 'welcome', 'access', 'password', 'reveal', 'confirm', 'restore', 'unlock', 'approve', 'review', 'pay-choice', 'backup'];
+    if (hidden.includes(state.screen)) return '';
+    const tabs = [
+      ['home', 'account_balance_wallet', 'Home'],
+      ['send', 'send', 'Send'],
+      ['receive', 'qr_code_2', 'Receive'],
+      ['activity', 'receipt_long', 'Activity'],
+      ['settings', 'settings', 'Settings'],
+    ];
+    return `<nav class="tabbar" aria-label="Wallet">${tabs.map(([action, glyph, label]) => `<button type="button" class="tab${state.screen === action ? ' active' : ''}" data-action="${action}"${state.screen === action ? ' aria-current="page"' : ''}>${icon(glyph)}<span>${label}</span></button>`).join('')}</nav>`;
   }
 
   function banners() {
@@ -889,9 +937,8 @@
     const provider = chain === 'dogecoinvm'
       ? vmProvider().label
       : (state.busy ? 'Checking the network…' : window.DogeNet.createProvider(state.settings).label);
-    const lockBtn = state.secret ? button('ghost', 'lock', 'lock', 'Lock') : button('ghost', 'go-unlock', 'lock_open', 'Unlock', 'data-next="home"');
     const last = state.lastTx ? `<p class="foot">${icon('receipt_long')}<a href="${esc(txLink(state.lastChain, state.lastTx))}" target="_blank" rel="noopener"><span class="num">${esc(state.lastTx.slice(0, 10))}…</span></a></p>` : '';
-    return shell('', `${chainButtons(chain, false)}${chain === 'dogecoinvm' ? vmHelp() : ''}<p class="balance">${esc(balanceText(chain))} <span>DOGE</span></p><p class="sub">${dollars ? `<span class="num">${esc(dollars)}</span> · ` : ''}${esc(chainName(chain))}, ${esc(provider)}</p>${qrBlock(link)}<div class="card flat">${addressField(current.address)}</div><p class="hint">The QR is a payment link for ${esc(chainName(chain))}. The address you copy is only the address. It is the same on both chains, and copying it does not choose a chain. The keys stay in this browser.</p><div class="nav">${button('primary', 'send', 'send', 'Send')}${button('ghost', 'receive', 'qr_code_2', 'Receive')}</div><div class="nav">${button('ghost', 'activity', 'receipt_long', 'Activity')}${button('ghost', 'settings', 'settings', 'Settings')}</div><div class="nav">${lockBtn}${button('ghost', 'refresh', 'refresh', 'Refresh')}</div><p class="foot">${icon('shield')}<span>Keys stay in this browser.</span></p>${last}`);
+    return shell('', `${chainButtons(chain, false)}${chain === 'dogecoinvm' ? vmHelp() : ''}<p class="balance">${esc(balanceText(chain))} <span>DOGE</span></p><p class="sub">${dollars ? `<span class="num">${esc(dollars)}</span> · ` : ''}${esc(chainName(chain))}, ${esc(provider)}</p>${qrBlock(link)}<div class="card flat">${addressField(current.address)}</div><p class="hint">The QR is a payment link for ${esc(chainName(chain))}. The address you copy is only the address. It is the same on both chains, and copying it does not choose a chain. The keys stay in this browser.</p><p class="foot">${icon('shield')}<span>Keys stay in this browser.</span></p>${last}`);
   }
 
   function send() {
@@ -901,7 +948,7 @@
       ['fast', 'Fast', 'bolt'],
     ].map(([name, label, glyph]) => `<button type="button" class="choice ${state.draft.fee === name ? 'active' : ''}" data-action="fee" data-fee="${name}">${icon(glyph)}<span><strong>${label}</strong><span class="fee">${esc(feeLabel(name))}</span></span></button>`).join('');
     const locked = state.draft.locked ? '<p class="hint">This payment link already chooses the chain. It will not be paid on the other chain.</p>' : '<p class="hint">A bare address can be paid on either chain. A dogecoin: or dogecoinvm: link chooses for you. Amount example: dogecoin:D...?amount=1.5</p>';
-    return shell(`Send on ${chainName(state.draft.chain)}`, `<form class="stack" data-action="to-review">${chainButtons(state.draft.chain, state.draft.locked)}${state.draft.chain === 'dogecoinvm' ? vmHelp() : ''}${locked}<label>To<input id="send-to" value="${esc(state.draft.to)}" autocomplete="off" spellcheck="false" required></label><div class="field"><div class="field-head"><span>Amount</span><button type="button" class="link" data-action="fill-max">${icon('account_balance_wallet')}<span>Send all</span></button></div><input id="send-amount" class="num" data-amount="1" value="${esc(state.draft.amount)}" inputmode="decimal" autocomplete="off"></div><div class="row">${fees}</div><button class="primary" type="submit">${icon('fact_check')}<span>Review</span></button>${button('ghost', 'home', 'arrow_back', 'Back')}</form>`, 'send');
+    return shell(`Send on ${chainName(state.draft.chain)}`, `<form class="stack" data-action="to-review">${chainButtons(state.draft.chain, state.draft.locked)}${state.draft.chain === 'dogecoinvm' ? vmHelp() : ''}${locked}<label>To<input id="send-to" value="${esc(state.draft.to)}" autocomplete="off" spellcheck="false" required></label><div class="field"><div class="field-head"><span>Amount</span><button type="button" class="link" data-action="fill-max">${icon('account_balance_wallet')}<span>Send all</span></button></div><input id="send-amount" class="num" data-amount="1" value="${esc(state.draft.amount)}" inputmode="decimal" autocomplete="off"></div><div class="row">${fees}</div><button class="primary" type="submit">${icon('fact_check')}<span>Review</span></button></form>`, 'send');
   }
 
   function review() {
@@ -929,7 +976,7 @@
     if (state.chainError[chain]) state.error = state.chainError[chain];
     const current = currentReceive(chain);
     const link = window.DogeChain.paymentUri(chain, current.address);
-    return shell('Receive', `${chainButtons(chain, false)}${chain === 'dogecoinvm' ? vmHelp() : ''}${qrBlock(link)}${addressField(current.address)}<p class="hint">The QR is a ${chain === 'dogecoinvm' ? 'dogecoinvm:' : 'dogecoin:'} link, so a scan pays ${esc(chainName(chain))}. ${esc(chainWait(chain))} The address below is only the address. After it receives a payment, the next one appears here.</p>${button('ghost', 'home', 'arrow_back', 'Back')}`, 'qr_code_2');
+    return shell('Receive', `${chainButtons(chain, false)}${chain === 'dogecoinvm' ? vmHelp() : ''}${qrBlock(link)}${addressField(current.address)}<p class="hint">The QR is a ${chain === 'dogecoinvm' ? 'dogecoinvm:' : 'dogecoin:'} link, so a scan pays ${esc(chainName(chain))}. ${esc(chainWait(chain))} The address below is only the address. After it receives a payment, the next one appears here.</p>`, 'qr_code_2');
   }
 
   function activity() {
@@ -940,28 +987,38 @@
     const rows = (state.histories[chain] || []).length
       ? state.histories[chain].map((tx) => `<a class="tx" href="${esc(txLink(chain, tx.txid))}" target="_blank" rel="noopener"><span>${tx.time ? esc(new Date(tx.time * 1000).toLocaleString()) : 'Watched'}</span><strong>${esc(tx.change || '')}</strong></a>`).join('')
       : (state.chainError[chain] ? '' : `<p class="hint">${esc(empty)}</p>`);
-    return shell('Activity', `${chainButtons(chain, false)}<div class="card list">${rows}</div>${button('ghost', 'home', 'arrow_back', 'Back')}`, 'receipt_long');
+    return shell('Activity', `${chainButtons(chain, false)}<div class="card list">${rows}</div>`, 'receipt_long');
   }
 
-  function vmSettings(s) {
-    const preset = s.vmPreset === 'custom' ? 'custom' : 'metaldoge';
-    const broadcast = s.vmBroadcast === 'custom' ? 'custom' : (s.vmBroadcast === 'metaldoge' ? 'metaldoge' : 'same');
-    const lookup = `<label>Where to look up DogecoinVM coins<select name="vmPreset"><option value="metaldoge" ${preset === 'metaldoge' ? 'selected' : ''}>MetalDoge (vm.dogedrop.org)</option><option value="custom" ${preset === 'custom' ? 'selected' : ''}>Custom</option></select></label>`;
-    const lookupUrl = preset === 'custom' ? field('vmUrl', 'DogecoinVM explorer', s.vmUrl, 'https://vm.dogedrop.org') : '';
-    const send = `<label>Where to send the signed DogecoinVM payment<select name="vmBroadcast"><option value="same" ${broadcast === 'same' ? 'selected' : ''}>Same as the explorer</option><option value="metaldoge" ${broadcast === 'metaldoge' ? 'selected' : ''}>MetalDoge (vm.dogedrop.org)</option><option value="custom" ${broadcast === 'custom' ? 'selected' : ''}>Custom</option></select></label>`;
-    const sendUrl = broadcast === 'custom' ? field('vmBroadcastUrl', 'DogecoinVM send address', s.vmBroadcastUrl, 'https://vm.dogedrop.org') : '';
-    return lookup + lookupUrl + send + sendUrl;
+  function settingsTabs(selected) {
+    return `<div class="chains" role="tablist" aria-label="Which chain to configure">${['dogecoin', 'dogecoinvm'].map((id) => `<button type="button" class="chain ${selected === id ? 'active' : ''}" role="tab" aria-selected="${selected === id}" data-action="settings-tab" data-chain="${id}">${icon(id === 'dogecoinvm' ? 'bolt' : 'payments')}<span><strong>${chainName(id)}</strong></span></button>`).join('')}</div>`;
   }
 
-  function settings() {
-    const s = state.settings;
+  function dogeSettings(s) {
     const options = window.DogeNet.PRESETS.map((preset) => `<option value="${preset.id}" ${s.preset === preset.id ? 'selected' : ''}>${esc(preset.label)}</option>`).join('');
     const broadcasts = [['same', 'Same as above'], ['public', 'Public explorers'], ['blockcypher', 'BlockCypher'], ['core', 'Dogecoin Core'], ['dogego', 'DogeGo'], ['memetracker', 'MemeTracker']].map(([id, label]) => `<option value="${id}" ${s.broadcast === id ? 'selected' : ''}>${label}</option>`).join('');
     const detail = window.DogeNet.PRESETS.find((preset) => preset.id === s.preset)?.detail || '';
     const core = s.preset === 'core' || s.broadcast === 'core';
     const dogego = s.preset === 'dogego' || s.broadcast === 'dogego';
     const meme = s.preset === 'memetracker' || s.broadcast === 'memetracker';
-    return shell('Connection', `<form id="settings-form" class="stack" data-action="save-settings"><p class="lead">${esc(detail)} DogecoinVM looks up coins and sends the signed payment through vm.dogedrop.org unless you choose a custom address. The keys are not sent there. Hosting your own copy is recommended.</p><label>Where to look up Dogecoin coins<select name="preset">${options}</select></label><label>Where to send the signed Dogecoin payment<select name="broadcast">${broadcasts}</select></label>${s.preset === 'blockcypher' || s.broadcast === 'blockcypher' ? field('blockcypherToken', 'BlockCypher token, optional', s.blockcypherToken) : ''}${s.preset === 'sochain' ? field('sochainKey', 'SoChain API key', s.sochainKey) : ''}${core ? `${field('coreUrl', 'Dogecoin Core URL', s.coreUrl, 'https://node.example.com:22555')}${field('coreUser', 'RPC user', s.coreUser)}${field('corePassword', 'RPC password', s.corePassword, '', 'password')}` : ''}${dogego ? `${field('dogegoUrl', 'DogeGo URL', s.dogegoUrl, 'https://node.example.com:22555')}${field('dogegoUser', 'RPC user', s.dogegoUser)}${field('dogegoPassword', 'RPC password', s.dogegoPassword, '', 'password')}` : ''}${meme ? field('memetrackerUrl', 'MemeTracker URL', s.memetrackerUrl, 'https://tracker.example.com') : ''}${vmSettings(s)}<label>Lock after<select name="autolockMinutes"><option value="5" ${s.autolockMinutes == 5 ? 'selected' : ''}>5 minutes</option><option value="15" ${s.autolockMinutes == 15 ? 'selected' : ''}>15 minutes</option><option value="60" ${s.autolockMinutes == 60 ? 'selected' : ''}>1 hour</option><option value="0" ${s.autolockMinutes == 0 ? 'selected' : ''}>When I close this page</option></select></label><button class="primary" type="submit">${icon('save')}<span>Save</span></button>${button('ghost', 'test-connection', 'wifi_tethering', 'Test connection')}${button('ghost', 'download-backup', 'download', 'Download encrypted backup')}${button('ghost', 'go-unlock', 'visibility', 'Show recovery phrase', 'data-next="backup"')}${button('ghost', 'home', 'arrow_back', 'Back')}</form><div class="card"><p>Removing the wallet from this browser does not move the coins. Type the receive address to confirm.</p><input id="delete-address" class="num" autocomplete="off" spellcheck="false">${button('danger', 'delete-wallet', 'delete', 'Remove from this browser')}</div><p class="foot">${icon('shield')}<span>A node password is stored only in this browser and is sent only to the node address above. The recovery phrase is never sent.</span></p>`, 'settings');
+    return `<p class="lead">${esc(detail)}</p><label>Where to look up coins<select name="preset">${options}</select></label><label>Where to send the signed payment<select name="broadcast">${broadcasts}</select></label>${s.preset === 'blockcypher' || s.broadcast === 'blockcypher' ? field('blockcypherToken', 'BlockCypher token, optional', s.blockcypherToken) : ''}${s.preset === 'sochain' ? field('sochainKey', 'SoChain API key', s.sochainKey) : ''}${core ? `${field('coreUrl', 'Dogecoin Core URL', s.coreUrl, 'https://node.example.com:22555')}${field('coreUser', 'RPC user', s.coreUser)}${field('corePassword', 'RPC password', s.corePassword, '', 'password')}` : ''}${dogego ? `${field('dogegoUrl', 'DogeGo URL', s.dogegoUrl, 'https://node.example.com:22555')}${field('dogegoUser', 'RPC user', s.dogegoUser)}${field('dogegoPassword', 'RPC password', s.dogegoPassword, '', 'password')}` : ''}${meme ? field('memetrackerUrl', 'MemeTracker URL', s.memetrackerUrl, 'https://tracker.example.com') : ''}`;
+  }
+
+  function vmSettings(s) {
+    const preset = s.vmPreset === 'custom' ? 'custom' : 'metaldoge';
+    const broadcast = s.vmBroadcast === 'custom' ? 'custom' : (s.vmBroadcast === 'metaldoge' ? 'metaldoge' : 'same');
+    const lookup = `<label>Where to look up coins<select name="vmPreset"><option value="metaldoge" ${preset === 'metaldoge' ? 'selected' : ''}>MetalDoge (vm.dogedrop.org)</option><option value="custom" ${preset === 'custom' ? 'selected' : ''}>Custom</option></select></label>`;
+    const lookupUrl = preset === 'custom' ? field('vmUrl', 'Explorer address', s.vmUrl, 'https://vm.dogedrop.org') : '';
+    const send = `<label>Where to send the signed payment<select name="vmBroadcast"><option value="same" ${broadcast === 'same' ? 'selected' : ''}>Same as the explorer</option><option value="metaldoge" ${broadcast === 'metaldoge' ? 'selected' : ''}>MetalDoge (vm.dogedrop.org)</option><option value="custom" ${broadcast === 'custom' ? 'selected' : ''}>Custom</option></select></label>`;
+    const sendUrl = broadcast === 'custom' ? field('vmBroadcastUrl', 'Send address', s.vmBroadcastUrl, 'https://vm.dogedrop.org') : '';
+    return `<p class="lead">Coins are looked up and the signed payment is sent through vm.dogedrop.org unless you choose a custom address. The keys are not sent there.</p>${lookup}${lookupUrl}${send}${sendUrl}`;
+  }
+
+  function settings() {
+    const s = state.settings;
+    const tab = state.settingsTab === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+    const chainFields = tab === 'dogecoinvm' ? vmSettings(s) : dogeSettings(s);
+    return shell('Connection', `${settingsTabs(tab)}<form id="settings-form" class="stack" data-action="save-settings">${chainFields}<label>Lock after<select name="autolockMinutes"><option value="5" ${s.autolockMinutes == 5 ? 'selected' : ''}>5 minutes</option><option value="15" ${s.autolockMinutes == 15 ? 'selected' : ''}>15 minutes</option><option value="60" ${s.autolockMinutes == 60 ? 'selected' : ''}>1 hour</option><option value="0" ${s.autolockMinutes == 0 ? 'selected' : ''}>When I close this page</option></select></label><button class="primary" type="submit">${icon('save')}<span>Save</span></button>${button('ghost', 'test-connection', 'wifi_tethering', 'Test connection')}${button('ghost', 'download-backup', 'download', 'Download encrypted backup')}${button('ghost', 'go-unlock', 'visibility', 'Show recovery phrase', 'data-next="backup"')}</form><div class="card"><p>Removing the wallet from this browser does not move the coins. Type the receive address to confirm.</p><input id="delete-address" class="num" autocomplete="off" spellcheck="false">${button('danger', 'delete-wallet', 'delete', 'Remove from this browser')}</div><p class="foot">${icon('shield')}<span>A node password is stored only in this browser and is sent only to the node address above. The recovery phrase is never sent.</span></p>`, 'settings');
   }
 
   function backup() {
