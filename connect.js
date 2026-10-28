@@ -104,6 +104,7 @@
     frame = document.createElement('iframe');
     frame.id = 'doge-pocket-frame';
     frame.title = 'DogeWallet';
+    frame.allow = 'clipboard-write';
     phone = document.createElement('div');
     phone.id = 'doge-pocket-phone';
     phone.hidden = true;
