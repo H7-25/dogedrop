@@ -229,7 +229,7 @@
   "Leftover": "Il resto di",
   "goes to a new address on {chain}.": "viene inviato a un nuovo indirizzo su {chain}.",
   "Signed in this browser, then sent through {provider}.": "Firmato in questo browser, poi inviato tramite {provider}.",
-  "The QR is a {scheme} link, so a scan pays {chain}.": "Il codice QR è un link {scheme}, quindi una scansione paga su {chain}.",
+  "The QR is a {scheme} link, so a scan pays {chain}.": "Il codice QR è un link {scheme} quindi una scansione paga su {chain}.",
   "The address below is only the address. After it receives a payment, the next one appears here.": "L'indirizzo qui sotto è solo l'indirizzo. Dopo che riceve un pagamento, qui compare il successivo.",
   "{host} wants a signature from your wallet. This does not spend coins.": "{host} richiede una firma dal tuo wallet. Questa operazione non spende monete.",
   "{host} wants to see your Dogecoin address and ask before each payment. It cannot see your recovery phrase.": "{host} vuole vedere il tuo indirizzo Dogecoin e chiedere il consenso prima di ogni pagamento. Non può vedere la tua frase di recupero.",
