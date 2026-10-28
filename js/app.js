@@ -4,6 +4,7 @@
   const SETTINGS_KEY = 'doge-pocket.settings.v1';
   const CAUTION_KEY = 'dogedrop.caution.wallet.v1';
   const SITES_KEY = 'doge-pocket.sites.v1';
+  const CHAIN_CACHE_KEY = 'doge-pocket.chain.v1';
   const embed = new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window;
   if (embed) document.documentElement.classList.add('is-embed');
 
@@ -20,6 +21,7 @@
     coins: { dogecoin: [], dogecoinvm: [] },
     histories: { dogecoin: [], dogecoinvm: [] },
     chainError: { dogecoin: '', dogecoinvm: '' },
+    stale: { dogecoin: false, dogecoinvm: false },
     lastChain: 'dogecoin',
     fees: { slow: 1000, normal: 10000, fast: 50000, priceUsd: 0 },
     syncedAt: 0,
@@ -72,7 +74,12 @@
     if (!state.settings.vmBroadcast) state.settings.vmBroadcast = 'same';
     if (!state.settings.vmUrl || state.settings.vmUrl === 'https://metaldoge.com' || state.settings.vmUrl === 'https://metaldoge.dogedrop.org') state.settings.vmUrl = 'https://vm.dogedrop.org';
     if (!state.settings.vmBroadcastUrl || state.settings.vmBroadcastUrl === 'https://metaldoge.com' || state.settings.vmBroadcastUrl === 'https://metaldoge.dogedrop.org') state.settings.vmBroadcastUrl = 'https://vm.dogedrop.org';
+    if (!state.settings.presetChosen && state.settings.preset === 'public') state.settings.preset = 'dogechain';
     state.sites = readJson(SITES_KEY) || {};
+    if (state.pub) {
+      applyChainCache('dogecoin');
+      applyChainCache('dogecoinvm');
+    }
     state.draft.fee = state.settings.fee || 'normal';
     let next = state.pub ? 'home' : 'welcome';
     if (state.request?.type === 'pay' && state.pub) next = 'review';
@@ -475,6 +482,7 @@
     'download-backup': () => download('dogecoin-wallet-backup.json', JSON.stringify({ app: 'doge-pocket', version: 1, vault: state.vault }, null, 2), 'application/json'),
     'save-settings': async () => {
       readSettings();
+      state.settings.presetChosen = true;
       writeJson(SETTINGS_KEY, state.settings);
       go('home', 'Settings saved on this browser.');
       refresh().catch(() => {});
@@ -510,6 +518,7 @@
       localStorage.removeItem(VAULT_KEY);
       localStorage.removeItem(PUBLIC_KEY);
       localStorage.removeItem(SITES_KEY);
+      localStorage.removeItem(CHAIN_CACHE_KEY);
       state.vault = null;
       state.pub = null;
       state.secret = null;
@@ -517,6 +526,7 @@
       state.balances = { dogecoin: null, dogecoinvm: null };
       state.coins = { dogecoin: [], dogecoinvm: [] };
       state.histories = { dogecoin: [], dogecoinvm: [] };
+      state.stale = { dogecoin: false, dogecoinvm: false };
       go('welcome', 'The wallet was removed from this browser. The coins are still safe if you kept the 12 words.');
     },
     'close-panel': () => {
@@ -600,10 +610,27 @@
       state.coins[chain] = coins;
       state.balances[chain] = coins.reduce((sum, coin) => sum + coin.value, 0n);
       const used = watched.filter((row) => info[row.address]?.used).map((row) => row.address);
-      state.histories[chain] = used.length ? await provider.history(used) : [];
+      try {
+        state.histories[chain] = used.length ? await provider.history(used) : [];
+      } catch (error) {
+        const saved = readChainStore()?.chains?.[chain];
+        state.histories[chain] = saved?.history || [];
+        state.stale[chain] = false;
+        state.chainError[chain] = state.histories[chain].length
+          ? 'Activity could not be refreshed. Showing the last saved payments. The balance is current.'
+          : error.message;
+        saveChainCache(chain);
+        return;
+      }
       state.chainError[chain] = '';
+      state.stale[chain] = false;
+      saveChainCache(chain);
     } catch (error) {
-      state.chainError[chain] = error.message;
+      if (applyChainCache(chain)) {
+        state.chainError[chain] = `The network did not answer (${error.message}). Showing the last saved balance and activity.`;
+      } else {
+        state.chainError[chain] = error.message;
+      }
     }
   }
 
@@ -937,8 +964,9 @@
     const provider = chain === 'dogecoinvm'
       ? vmProvider().label
       : (state.busy ? 'Checking the network…' : window.DogeNet.createProvider(state.settings).label);
+    const savedCopy = state.stale[chain] ? ' · last saved copy' : '';
     const last = state.lastTx ? `<p class="foot">${icon('receipt_long')}<a href="${esc(txLink(state.lastChain, state.lastTx))}" target="_blank" rel="noopener"><span class="num">${esc(state.lastTx.slice(0, 10))}…</span></a></p>` : '';
-    return shell('', `${chainButtons(chain, false)}${chain === 'dogecoinvm' ? vmHelp() : ''}<p class="balance">${esc(balanceText(chain))} <span>DOGE</span></p><p class="sub">${dollars ? `<span class="num">${esc(dollars)}</span> · ` : ''}${esc(chainName(chain))}, ${esc(provider)}</p>${qrBlock(link)}<div class="card flat">${addressField(current.address)}</div><p class="hint">The QR is a payment link for ${esc(chainName(chain))}. The address you copy is only the address. It is the same on both chains, and copying it does not choose a chain. The keys stay in this browser.</p><p class="foot">${icon('shield')}<span>Keys stay in this browser.</span></p>${last}`);
+    return shell('', `${chainButtons(chain, false)}${chain === 'dogecoinvm' ? vmHelp() : ''}<p class="balance">${esc(balanceText(chain))} <span>DOGE</span></p><p class="sub">${dollars ? `<span class="num">${esc(dollars)}</span> · ` : ''}${esc(chainName(chain))}, ${esc(provider)}${savedCopy}</p>${qrBlock(link)}<div class="card flat">${addressField(current.address)}</div><p class="hint">The QR is a payment link for ${esc(chainName(chain))}. The address you copy is only the address. It is the same on both chains, and copying it does not choose a chain. The keys stay in this browser.</p><p class="foot">${icon('shield')}<span>Keys stay in this browser.</span></p>${last}`);
   }
 
   function send() {
@@ -1081,6 +1109,60 @@
     const value = Number(koinu) / 1e8 * state.fees.priceUsd;
     if (!Number.isFinite(value)) return '';
     return value.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+  }
+
+  function walletCacheId() {
+    if (!state.pub) return '';
+    return state.pub.type === 'single' ? `single:${state.pub.address}` : `hd:${state.pub.xpub}`;
+  }
+
+  function readChainStore() {
+    const saved = readJson(CHAIN_CACHE_KEY);
+    if (!saved || saved.wallet !== walletCacheId()) return null;
+    return saved;
+  }
+
+  function saveChainCache(chain) {
+    const id = walletCacheId();
+    if (!id) return;
+    const store = readChainStore() || { v: 1, wallet: id, chains: {} };
+    store.chains[chain] = {
+      savedAt: Date.now(),
+      balance: state.balances[chain] == null ? null : state.balances[chain].toString(),
+      coins: (state.coins[chain] || []).map((coin) => ({
+        txid: coin.txid,
+        vout: coin.vout,
+        value: coin.value.toString(),
+        confirmations: coin.confirmations || 0,
+        address: coin.address,
+        chain: coin.chain,
+        index: coin.index,
+        script: coin.script || '',
+      })),
+      history: (state.histories[chain] || []).map((tx) => ({
+        txid: tx.txid,
+        time: tx.time || 0,
+        change: tx.change || '',
+        address: tx.address || '',
+      })),
+    };
+    writeJson(CHAIN_CACHE_KEY, store);
+  }
+
+  function applyChainCache(chain) {
+    const row = readChainStore()?.chains?.[chain];
+    if (!row) return false;
+    state.coins[chain] = (row.coins || []).map((coin) => ({ ...coin, value: coinKoinu(coin.value) }));
+    state.balances[chain] = row.balance == null
+      ? state.coins[chain].reduce((sum, coin) => sum + coin.value, 0n)
+      : coinKoinu(row.balance);
+    state.histories[chain] = row.history || [];
+    state.stale[chain] = true;
+    return true;
+  }
+
+  function coinKoinu(value) {
+    try { return BigInt(value || '0'); } catch { return 0n; }
   }
 
   function readJson(key) {

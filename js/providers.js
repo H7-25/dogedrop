@@ -1,5 +1,6 @@
 (function () {
   const PRESETS = [
+    { id: 'dogechain', label: 'Dogechain', detail: 'Free Dogechain API at dogechain.com, no key. Balance, activity and unspent coins come from there. Signed payments go out through a public explorer, because Dogechain does not broadcast.' },
     { id: 'public', label: 'Public explorers', detail: 'Dogechain for history, Blockchair for coins and sending. No account.' },
     { id: 'blockcypher', label: 'BlockCypher', detail: 'Free BlockCypher Dogecoin API. An optional token raises the limit.' },
     { id: 'sochain', label: 'SoChain', detail: 'SoChain finds coins. An API key is required. Sending still uses a public explorer unless you pick a node.' },
@@ -10,7 +11,7 @@
 
   function defaultSettings() {
     return {
-      preset: 'public',
+      preset: 'dogechain',
       broadcast: 'same',
       fee: 'normal',
       autolockMinutes: 15,
@@ -38,7 +39,7 @@
     return {
       id: config.preset,
       label: labelFor(config.preset),
-      broadcastLabel: labelFor(config.broadcast === 'same' ? config.preset : config.broadcast),
+      broadcastLabel: labelFor(sendPreset(config)),
       trustsNode: config.preset === 'core' || config.preset === 'dogego' || config.preset === 'memetracker',
       inspect: (addresses) => inspect(config, addresses),
       history: (addresses) => history(config, addresses),
@@ -97,6 +98,11 @@
     return PRESETS.find((preset) => preset.id === id)?.label || 'Public explorers';
   }
 
+  function sendPreset(config) {
+    const which = config.broadcast === 'same' ? config.preset : config.broadcast;
+    return which === 'dogechain' ? 'public' : which;
+  }
+
   async function inspect(config, addresses) {
     const list = unique(addresses);
     if (!list.length) return {};
@@ -105,6 +111,7 @@
     if (config.preset === 'memetracker') return memeTrackerInspect(config, list);
     if (config.preset === 'blockcypher') return blockcypherInspect(config, list);
     if (config.preset === 'sochain') return sochainInspect(config, list);
+    if (config.preset === 'dogechain') return dogechainInspect(list);
     try {
       return await blockchairInspect(list);
     } catch (error) {
@@ -121,13 +128,16 @@
     if (config.preset === 'memetracker') return memeTrackerHistory(config, list);
     if (config.preset === 'core' || config.preset === 'dogego') return [];
     const rows = [];
+    let misses = 0;
+    const pages = config.preset === 'dogechain' ? 5 : 1;
     for (const address of list) {
       try {
-        rows.push(...await dogechainHistory(address));
+        rows.push(...await dogechainHistory(address, pages));
       } catch {
-        /* One explorer miss should not hide the balance. */
+        misses += 1;
       }
     }
+    if (list.length && misses === list.length) throw new Error('Activity could not be loaded.');
     return dedupeHistory(rows);
   }
 
@@ -210,6 +220,11 @@
     if (config.preset === 'blockcypher') {
       await getJson(withToken('https://api.blockcypher.com/v1/doge/main', config.blockcypherToken));
       return 'BlockCypher answered.';
+    }
+    if (config.preset === 'dogechain') {
+      const body = await getJson('https://dogechain.com/api/v3/network');
+      const height = body.data?.info?.block_count;
+      return height ? `Dogechain answered. Block height ${height}.` : 'Dogechain answered.';
     }
     await getJson('https://dogechain.com/api/v3/network');
     await getJson('https://api.blockchair.com/dogecoin/stats');
@@ -330,14 +345,87 @@
     return out;
   }
 
-  async function dogechainHistory(address) {
-    const body = await getJson(`https://dogechain.com/api/v3/address/${address}?page=1`);
-    return (body.data?.transactions || []).map((tx) => ({
-      txid: tx.hash,
-      time: Number(tx.time) || 0,
-      change: tx.balance_change,
-      address,
-    }));
+  function dogeAmount(value) {
+    const text = String(value ?? '0').trim();
+    if (!text) return 0n;
+    const negative = text.startsWith('-');
+    const koinu = window.DogeChain.dogeToKoinu(negative ? text.slice(1) : text, true);
+    return negative ? -koinu : koinu;
+  }
+
+  async function dogechainAddress(address, page) {
+    const body = await getJson(`https://dogechain.com/api/v3/address/${address}?page=${page}`);
+    if (body.status === 'fail') throw new Error(body.data?.error_message || 'Dogechain could not read that address.');
+    return body.data || {};
+  }
+
+  async function dogechainInspect(addresses) {
+    const out = {};
+    for (const address of addresses) {
+      let data;
+      try {
+        data = await dogechainAddress(address, 1);
+      } catch (error) {
+        if (/not found|404/i.test(error.message || '')) {
+          out[address] = { used: false, utxos: [] };
+          continue;
+        }
+        throw error;
+      }
+      const summary = data.summary || {};
+      const target = dogeAmount(summary.confirmed_balance) + dogeAmount(summary.unconfirmed_balance);
+      const utxos = target > 0n ? await dogechainUnspent(address, data, target) : [];
+      out[address] = { used: Number(summary.txs_total) > 0 || utxos.length > 0, utxos };
+    }
+    return out;
+  }
+
+  async function dogechainUnspent(address, firstPage, target) {
+    const utxos = [];
+    let collected = 0n;
+    let data = firstPage;
+    for (let page = 1; page <= 8 && collected < target; page += 1) {
+      if (page > 1) data = await dogechainAddress(address, page);
+      const txs = data.transactions || [];
+      for (const tx of txs) {
+        if (collected >= target) break;
+        if (dogeAmount(tx.value_received) <= 0n) continue;
+        const body = await getJson(`https://dogechain.com/api/v3/tx/${tx.hash}`);
+        if (body.status === 'fail') throw new Error(body.data?.error_message || 'Dogechain could not read a transaction.');
+        for (const output of body.data?.transaction?.outputs || []) {
+          if (output.address !== address || output.spent) continue;
+          const value = dogeAmount(output.value);
+          if (value <= 0n) continue;
+          utxos.push({
+            txid: tx.hash,
+            vout: Number(output.index),
+            value,
+            confirmations: tx.block == null ? 0 : 1,
+            address,
+          });
+          collected += value;
+        }
+      }
+      if (txs.length < 10) break;
+    }
+    if (collected < target) throw new Error('Dogechain reported a balance, but not every unspent coin was listed. Try again in a moment.');
+    return utxos;
+  }
+
+  async function dogechainHistory(address, pages = 1) {
+    const rows = [];
+    for (let page = 1; page <= pages; page += 1) {
+      const data = await dogechainAddress(address, page);
+      const txs = data.transactions || [];
+      rows.push(...txs.map((tx) => ({
+        txid: tx.hash,
+        time: Number(tx.time) || 0,
+        change: tx.balance_change,
+        address,
+      })));
+      if (txs.length < 10) break;
+    }
+    return rows;
   }
 
   async function memeTrackerHistory(config, addresses) {
@@ -557,14 +645,17 @@
 
   async function vmHistory(base, addresses) {
     const rows = [];
-    for (const address of unique(addresses).slice(0, 8)) {
+    let misses = 0;
+    const list = unique(addresses).slice(0, 8);
+    for (const address of list) {
       try {
         const body = await vmCall(`${base}/api/address/${encodeURIComponent(address)}`, undefined, 'explorer');
         for (const item of body.history || []) rows.push({ txid: item.txid, time: Number(item.time) || 0, change: item.net || '' });
       } catch {
-        /* One address miss should not hide the rest. */
+        misses += 1;
       }
     }
+    if (list.length && misses === list.length) throw new Error('DogecoinVM did not return activity.');
     return dedupeHistory(rows);
   }
 
