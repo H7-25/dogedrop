@@ -5,7 +5,7 @@
   "description": "DogeDrop, a self-custodial Dogecoin and DogecoinVM wallet that runs in the browser and can be embedded on any website.",
   "scripts": {
     "build": "esbuild src/chain.mjs --bundle --format=iife --global-name=DogeChain --outfile=js/doge-chain.js --legal-comments=eof",
-    "test": "node --test test/chain.test.mjs"
+    "test": "node --test test/*.test.mjs"
   },
   "license": "MIT",
   "dependencies": {

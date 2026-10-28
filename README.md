@@ -167,6 +167,26 @@ The readable signing code is `src/chain.mjs`. It uses audited libraries (`@scure
 
 The folder `1.0.90_0` is an unpacked copy of the Doge Soft extension, kept here only as a reference for how an injected `window` wallet behaves. This project does not extend that extension.
 
+## Wallet languages
+
+The wallet supports English and Italian. On first use it chooses a supported browser
+language, falling back to English. **Settings → Connection → Language** changes the
+language immediately and saves the choice in `dogedrop.language.v1` in local storage.
+The choice is separate from the wallet backup and connection settings.
+
+`js/i18n.js` uses the original English wording as translation keys and fallback text.
+Use `DogeI18n.t(source, parameters)` for UI text and escape interpolated user data
+before inserting it into HTML. `DogeI18n.message(error)` translates known diagnostics
+at the UI boundary; provider code and public integration errors stay unchanged.
+Unknown external diagnostics remain verbatim inside a translated error message.
+Recovery words, addresses, signatures and backup data are never translated. The
+JavaScript-disabled notice stays in English. The guide itself is not part of the
+wallet translation catalog.
+
+Keep `docs/wallet/` copies of the wallet scripts and HTML synchronized with the root
+working copy. `npm test` runs both signing and i18n regression tests. No translation
+dependency or build step is needed.
+
 ## Limits
 
 This does not replace a browser extension. A site has to include `connect.js`. Payments are normal Dogecoin P2PKH transfers, not Doginals or tokens. The visitor who loses the 12 words loses the coins. The password only locks the copy stored in that browser.

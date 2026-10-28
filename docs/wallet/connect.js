@@ -11,6 +11,19 @@
   let backdrop;
   let button;
   let pinned = false;
+  // Keep this embed script standalone; the wallet sends its stored preference.
+  const preferences = navigator.languages?.length ? navigator.languages : [navigator.language];
+  let language = preferences.map((value) => String(value).toLowerCase().split(/[-_]/)[0]).find((value) => value === 'en' || value === 'it') || 'en';
+  const translations = { 'Connected': 'Connesso', 'Not connected': 'Non connesso', 'connected': 'connesso', 'not connected': 'non connesso' };
+  const textFor = (text) => language === 'it' ? translations[text] || text : text;
+  let chipConnected = false;
+  function paintChip() {
+    if (!button) return;
+    const mark = button.querySelector('[data-status]');
+    const word = button.querySelector('[data-word]')?.textContent || 'DogeWallet';
+    if (mark) mark.textContent = textFor(chipConnected ? 'Connected' : 'Not connected');
+    button.setAttribute('aria-label', `${word}, ${textFor(chipConnected ? 'connected' : 'not connected')}`);
+  }
   let readyResolve;
   const ready = new Promise((resolve) => { readyResolve = resolve; });
 
@@ -117,7 +130,7 @@
       button.innerHTML = '<img alt=""><span data-word></span><span data-status>Not connected</span>';
       button.querySelector('img').src = logo;
       button.querySelector('[data-word]').textContent = word;
-      button.setAttribute('aria-label', `${word}, not connected`);
+      paintChip();
       button.addEventListener('click', async () => {
         const opening = phone.hidden;
         pinned = opening;
@@ -138,6 +151,11 @@
       if (!fromWallet(event)) return;
       const data = event.data;
       if (!data || data.channel !== 'doge-pocket') return;
+      if (data.event === 'language') {
+        language = data.language === 'it' ? 'it' : 'en';
+        paintChip();
+        return;
+      }
       if (data.event === 'ready') {
         readyResolve();
         setTimeout(() => {
@@ -166,18 +184,16 @@
 
   async function refreshChip() {
     if (!button) return;
-    const mark = button.querySelector('[data-status]');
-    const label = button.querySelector('[data-word]');
-    const word = label ? label.textContent : 'DogeWallet';
     try {
       const status = await doge.getConnectionStatus();
       const on = !!status.connected;
       button.classList.toggle('is-on', on);
-      if (mark) mark.textContent = on ? 'Connected' : 'Not connected';
-      button.setAttribute('aria-label', on ? `${word}, connected` : `${word}, not connected`);
+      chipConnected = on;
+      paintChip();
     } catch {
       button.classList.remove('is-on');
-      if (mark) mark.textContent = 'Not connected';
+      chipConnected = false;
+      paintChip();
     }
   }
 
