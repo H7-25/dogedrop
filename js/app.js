@@ -1074,17 +1074,17 @@
 
   function approve() {
     if (!state.request) return home();
-    const host = esc(t(siteName(state.request.origin)));
+    const host = t(siteName(state.request.origin));
     if (state.request.type === 'sign') {
       const password = state.secret ? '' : `<label>${t("Wallet password")}<input name="password" type="password" autocomplete="current-password" required></label>`;
-      return shell(t("Sign a message"), `<form class="stack" data-action="approve-sign"><p>${t("{host} wants a signature from your wallet. This does not spend coins.", { host })}</p><div class="card">${esc(state.request.message)}</div>${password}<button class="primary" type="submit">${icon('draw')}<span>${t("Sign")}</span></button>${button('ghost', 'cancel-request', 'close', t("Cancel"))}</form>`, 'draw');
+      return shell(t("Sign a message"), `<form class="stack" data-action="approve-sign"><p>${esc(t("{host} wants a signature from your wallet. This does not spend coins.", { host }))}</p><div class="card">${esc(state.request.message)}</div>${password}<button class="primary" type="submit">${icon('draw')}<span>${t("Sign")}</span></button>${button('ghost', 'cancel-request', 'close', t("Cancel"))}</form>`, 'draw');
     }
     const current = currentReceive();
-    return shell(t("Connect"), `<form class="stack" data-action="approve-connect"><p>${t("{host} wants to see your Dogecoin address and ask before each payment. It cannot see your recovery phrase.", { host })}</p>${addressField(current.address)}<label>${t("Wallet password")}<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">${icon('lock_open')}<span>${t("Connect")}</span></button>${button('ghost', 'cancel-request', 'close', t("Cancel"))}</form>`, 'lock');
+    return shell(t("Connect"), `<form class="stack" data-action="approve-connect"><p>${esc(t("{host} wants to see your Dogecoin address and ask before each payment. It cannot see your recovery phrase.", { host }))}</p>${addressField(current.address)}<label>${t("Wallet password")}<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">${icon('lock_open')}<span>${t("Connect")}</span></button>${button('ghost', 'cancel-request', 'close', t("Cancel"))}</form>`, 'lock');
   }
 
   function payChoice() {
-    const host = esc(t(siteName(state.request?.origin)));
+    const host = t(siteName(state.request?.origin));
     const chain = state.draft.chain === 'dogecoinvm' ? 'dogecoinvm' : (state.draft.chain === 'dogecoin' ? 'dogecoin' : '');
     const named = chain ? chainName(chain) : t("Choose a chain in the payment link");
     const uri = externalPayLink();
@@ -1094,7 +1094,7 @@
     const other = chain === 'dogecoinvm'
       ? t("This opens a dogecoinvm: link for a wallet already installed on this device. DogeDrop does not sign that payment.")
       : t("This opens a dogecoin: link for a wallet already installed on this device. DogeDrop does not sign that payment.");
-    return shell(t("Choose how to pay"), `<p>${t("{host} is asking for a payment, and DogeDrop is not connected.", { host })}</p><div class="card"><p>${t("Chain")}<br><strong>${esc(named)}</strong></p><p>${t("To")}<br><span class="num">${esc(payAddress())}</span></p><p>${t("Amount")}<br><strong class="num">${esc(state.draft.amount)} DOGE</strong></p></div><div class="stack">${unlock}${button('ghost', 'start-create', 'add_card', t("Create a new wallet"))}${button('ghost', 'start-restore', 'key', t("Import a wallet"))}<a class="ghost" href="${esc(uri)}" target="_blank" rel="noopener" data-action="pay-external">${icon('payments')}<span>${t("Pay with another wallet")}</span></a><p class="hint">${other}</p>${button('ghost', 'cancel-request', 'close', t("Cancel"))}</div>`, 'payments');
+    return shell(t("Choose how to pay"), `<p>${esc(t("{host} is asking for a payment, and DogeDrop is not connected.", { host }))}</p><div class="card"><p>${t("Chain")}<br><strong>${esc(named)}</strong></p><p>${t("To")}<br><span class="num">${esc(payAddress())}</span></p><p>${t("Amount")}<br><strong class="num">${esc(state.draft.amount)} DOGE</strong></p></div><div class="stack">${unlock}${button('ghost', 'start-create', 'add_card', t("Create a new wallet"))}${button('ghost', 'start-restore', 'key', t("Import a wallet"))}<a class="ghost" href="${esc(uri)}" target="_blank" rel="noopener" data-action="pay-external">${icon('payments')}<span>${t("Pay with another wallet")}</span></a><p class="hint">${other}</p>${button('ghost', 'cancel-request', 'close', t("Cancel"))}</div>`, 'payments');
   }
 
   function externalPayLink() {

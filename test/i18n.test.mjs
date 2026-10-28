@@ -107,3 +107,36 @@ test('every Italian entry preserves its English interpolation parameters', () =>
     assert.deepEqual(placeholders(italian), placeholders(english), english);
   }
 });
+
+test('site approval and payment messages escape the complete translation exactly once', () => {
+  const appSource = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+  const renderers = appSource.slice(appSource.indexOf('  function approve() {'), appSource.indexOf('  function externalPayLink() {'));
+  const escapeFunction = appSource.split('\n').find((line) => line.startsWith('  function esc('));
+  const host = '<img src=x onerror="alert(1)"> & \'site\' &lt;host&gt;';
+  const escapeHtml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  for (const language of ['en', 'it']) {
+    const { i18n } = load({ languages: [language] });
+    // Include markup in the surrounding translated text to enforce escaping after
+    // interpolation, rather than escaping only the external host beforehand.
+    const t = (key, params) => i18n.t(key, params) + (key.startsWith('{host}') ? ' <translation & "text">' : '');
+    const context = vm.createContext({
+      state: { request: { origin: 'https://example.com', message: 'Message' }, draft: {}, pub: null },
+      t, siteName: () => host,
+      shell: (_title, body) => body, icon: () => '', button: () => '',
+      currentReceive: () => ({ address: '' }), addressField: () => '',
+      externalPayLink: () => '', payAddress: () => '',
+    });
+    vm.runInContext(escapeFunction + '\n' + renderers, context);
+    for (const [type, renderer, key] of [
+      ['sign', 'approve', '{host} wants a signature from your wallet. This does not spend coins.'],
+      ['connect', 'approve', '{host} wants to see your Dogecoin address and ask before each payment. It cannot see your recovery phrase.'],
+      ['pay', 'payChoice', '{host} is asking for a payment, and DogeDrop is not connected.'],
+    ]) {
+      context.state.request.type = type;
+      const html = vm.runInContext(renderer + '()', context);
+      assert.equal(html.match(/<p>(.*?)<\/p>/)[1], escapeHtml(t(key, { host })), `${language}: ${type}`);
+      assert.ok(!html.includes('<img'));
+      assert.ok(!html.includes('<translation'));
+    }
+  }
+});
