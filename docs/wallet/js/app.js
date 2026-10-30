@@ -28,7 +28,7 @@
     error: '',
     notice: '',
     busy: false,
-    draft: { to: '', amount: '', fee: 'normal', chain: 'dogecoin', locked: false, label: '', message: '' },
+    draft: { to: '', amount: '', fee: 'normal', customRate: 0, chain: 'dogecoin', locked: false, label: '', message: '' },
     request: null,
     approval: null,
     parentOrigin: '',
@@ -235,6 +235,16 @@
       }
       return;
     }
+    if (field.id === 'custom-fee') {
+      state.draft.fee = 'custom';
+      state.draft.customRate = stepToRate(field.value);
+      field.style.setProperty('--fill', `${Number(field.value) / 10}%`);
+      const readout = document.getElementById('custom-fee-readout');
+      if (readout) readout.textContent = `${window.DogeChain.formatDoge(window.DogeChain.feeFor(1, 2, state.draft.customRate))} DOGE`;
+      field.closest('.fee-custom')?.classList.add('active');
+      app.querySelectorAll('button.choice').forEach((button) => button.classList.remove('active'));
+      return;
+    }
     if (!field.dataset || field.dataset.amount == null) return;
     const cleaned = String(field.value).replace(/[^\d.]/g, '');
     const parts = cleaned.split('.');
@@ -345,7 +355,7 @@
       refresh().catch(() => {});
     },
     home: () => go('home'),
-    send: () => { state.draft = { to: '', amount: '', fee: state.settings.fee || 'normal', chain: state.chain || 'dogecoin', locked: false, label: '', message: '' }; go('send'); },
+    send: () => { state.draft = { to: '', amount: '', fee: state.settings.fee || 'normal', customRate: 0, chain: state.chain || 'dogecoin', locked: false, label: '', message: '' }; go('send'); },
     'set-chain': (button) => {
       const chain = button.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
       const to = document.getElementById('send-to');
@@ -690,8 +700,52 @@
     return keys;
   }
 
+  function feeSpan() {
+    if ((state.draft.chain || state.chain) === 'dogecoinvm') return { min: 10, max: 5000 };
+    const min = 1000;
+    const max = Math.max(min * 2, state.fees.fast || 0, state.fees.normal || 0, state.fees.slow || 0);
+    return { min, max };
+  }
+
+  function presetRate(name) {
+    if ((state.draft.chain || state.chain) === 'dogecoinvm') return { slow: 100, normal: 200, fast: 500 }[name] || 200;
+    return state.fees[name] || state.fees.normal || 10000;
+  }
+
+  function shownFeeRate() {
+    if (state.draft.fee === 'custom') return stepToRate(rateToStep(state.draft.customRate || feeSpan().min));
+    const name = ['slow', 'normal', 'fast'].includes(state.draft.fee) ? state.draft.fee : 'normal';
+    return presetRate(name);
+  }
+
+  function rateToStep(rate) {
+    const { min, max } = feeSpan();
+    const clamped = Math.min(max, Math.max(min, Number(rate) || min));
+    if (max === min) return 0;
+    const t = (Math.log(clamped) - Math.log(min)) / (Math.log(max) - Math.log(min));
+    return Math.round(t * 1000);
+  }
+
+  function stepToRate(step) {
+    const { min, max } = feeSpan();
+    const t = Math.min(1000, Math.max(0, Number(step) || 0)) / 1000;
+    if (max === min) return min;
+    return Math.round(Math.exp(Math.log(min) + t * (Math.log(max) - Math.log(min))));
+  }
+
+  function feeSlider() {
+    const step = rateToStep(shownFeeRate());
+    const readout = `${window.DogeChain.formatDoge(window.DogeChain.feeFor(1, 2, shownFeeRate()))} DOGE`;
+    return `<div class="fee-custom${state.draft.fee === 'custom' ? ' active' : ''}"><div class="fee-custom-head"><span>Custom</span><strong class="num" id="custom-fee-readout">${esc(readout)}</strong></div><input class="fee-range" id="custom-fee" type="range" min="0" max="1000" step="1" value="${step}" style="--fill:${step / 10}%" aria-label="Custom fee"><span class="hint">Left is cheaper. This is the fee for a simple payment.</span></div>`;
+  }
+
   function feeRate() {
     const chain = state.draft.chain || state.chain;
+    if (state.draft.fee === 'custom') {
+      const { min, max } = feeSpan();
+      const rate = Math.min(max, Math.max(min, Number(state.draft.customRate) || min));
+      return BigInt(Math.round(rate));
+    }
     if (chain === 'dogecoinvm') {
       const table = { slow: 100, normal: 200, fast: 500 };
       return BigInt(table[state.draft.fee || 'normal'] || 200);
@@ -769,7 +823,8 @@
       state.draft.amount = explicit != null && explicit !== '' ? String(explicit) : (parsed.amount || '');
       state.draft.label = parsed.label || '';
       state.draft.message = parsed.message || '';
-      state.draft.fee = state.settings.fee || 'normal';
+      // H7-25: a site may ask for slow, normal, or fast. Any other value keeps the wallet setting.
+      state.draft.fee = ['slow', 'normal', 'fast'].includes(request.fee) ? request.fee : (state.settings.fee || 'normal');
       state.error = state.draft.chain ? '' : 'Choose Dogecoin or DogecoinVM. The same address is not the same coins.';
     } catch (error) {
       state.draft.to = raw;
@@ -976,7 +1031,7 @@
       ['fast', 'Fast', 'bolt'],
     ].map(([name, label, glyph]) => `<button type="button" class="choice ${state.draft.fee === name ? 'active' : ''}" data-action="fee" data-fee="${name}">${icon(glyph)}<span><strong>${label}</strong><span class="fee">${esc(feeLabel(name))}</span></span></button>`).join('');
     const locked = state.draft.locked ? '<p class="hint">This payment link already chooses the chain. It will not be paid on the other chain.</p>' : '<p class="hint">A bare address can be paid on either chain. A dogecoin: or dogecoinvm: link chooses for you. Amount example: dogecoin:D...?amount=1.5</p>';
-    return shell(`Send on ${chainName(state.draft.chain)}`, `<form class="stack" data-action="to-review">${chainButtons(state.draft.chain, state.draft.locked)}${state.draft.chain === 'dogecoinvm' ? vmHelp() : ''}${locked}<label>To<input id="send-to" value="${esc(state.draft.to)}" autocomplete="off" spellcheck="false" required></label><div class="field"><div class="field-head"><span>Amount</span><button type="button" class="link" data-action="fill-max">${icon('account_balance_wallet')}<span>Send all</span></button></div><input id="send-amount" class="num" data-amount="1" value="${esc(state.draft.amount)}" inputmode="decimal" autocomplete="off"></div><div class="row">${fees}</div><button class="primary" type="submit">${icon('fact_check')}<span>Review</span></button></form>`, 'send');
+    return shell(`Send on ${chainName(state.draft.chain)}`, `<form class="stack" data-action="to-review">${chainButtons(state.draft.chain, state.draft.locked)}${state.draft.chain === 'dogecoinvm' ? vmHelp() : ''}${locked}<label>To<input id="send-to" value="${esc(state.draft.to)}" autocomplete="off" spellcheck="false" required></label><div class="field"><div class="field-head"><span>Amount</span><button type="button" class="link" data-action="fill-max">${icon('account_balance_wallet')}<span>Send all</span></button></div><input id="send-amount" class="num" data-amount="1" value="${esc(state.draft.amount)}" inputmode="decimal" autocomplete="off"></div><div class="row">${fees}</div>${feeSlider()}<button class="primary" type="submit">${icon('fact_check')}<span>Review</span></button></form>`, 'send');
   }
 
   function review() {

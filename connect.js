@@ -104,6 +104,8 @@
     frame = document.createElement('iframe');
     frame.id = 'doge-pocket-frame';
     frame.title = 'DogeWallet';
+    // H7-25: copy works inside the embedded wallet. This allows writing the clipboard, not reading it.
+    frame.allow = 'clipboard-write';
     phone = document.createElement('div');
     phone.id = 'doge-pocket-phone';
     phone.hidden = true;
