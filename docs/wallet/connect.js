@@ -3,7 +3,9 @@
   const script = document.currentScript;
   const walletBase = new URL(script && script.dataset.wallet ? script.dataset.wallet : '.', script ? script.src : location.href);
   const walletOrigin = walletBase.origin;
-  const walletUrl = new URL('index.html?embed=1', walletBase).href;
+  const walletPage = new URL('index.html?embed=1', walletBase);
+  walletPage.searchParams.set('dogevm', script && script.dataset.dogevm === 'false' ? '0' : '1');
+  const walletUrl = walletPage.href;
   const listeners = {};
   const pending = new Map();
   let frame;

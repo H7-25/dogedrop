@@ -222,6 +222,17 @@ button.choice { background: #fff; border-color: var(--line); text-align: left; j
 button.choice strong { display: block; font-family: "Inter", system-ui, sans-serif; }
 button.choice .fee { color: var(--muted); font-size: 11px; }
 button.choice.active { border-color: var(--accent); background: var(--accent-soft); }
+.fee-custom { display: grid; gap: 8px; margin-top: 8px; padding: 12px; border: 1px solid var(--line); background: #fff; }
+.fee-custom.active { border-color: var(--accent); background: var(--accent-soft); }
+.fee-custom-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-weight: 700; }
+.fee-custom .hint { font-size: 13px; }
+input.fee-range { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; margin: 0; background: transparent; cursor: pointer; }
+input.fee-range:focus { outline: none; }
+input.fee-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+input.fee-range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--accent) var(--fill, 0%), #e2e8f0 var(--fill, 0%)); }
+input.fee-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border: 2px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28); }
+input.fee-range::-moz-range-track { height: 6px; border: 0; border-radius: 999px; background: linear-gradient(90deg, var(--accent) var(--fill, 0%), #e2e8f0 var(--fill, 0%)); }
+input.fee-range::-moz-range-thumb { width: 22px; height: 22px; border: 2px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28); }
 .modes { display: grid; gap: 8px; margin-top: 4px; }
 button.mode {
   display: grid;

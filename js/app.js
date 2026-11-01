@@ -1,5 +1,6 @@
 (function () {
   const DEBUG = false;
+  const t = (...args) => window.t(...args);
 
   const VAULT_KEY = 'doge-pocket.vault.v1';
   const PUBLIC_KEY = 'doge-pocket.public.v1';
@@ -8,6 +9,7 @@
   const SITES_KEY = 'doge-pocket.sites.v1';
   const CHAIN_CACHE_KEY = 'doge-pocket.chain.v1';
   const embed = new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window;
+  const dogevmEnabled = new URLSearchParams(location.search).get('dogevm') !== '0';
   if (embed) document.documentElement.classList.add('is-embed');
 
   const state = {
@@ -30,7 +32,7 @@
     error: '',
     notice: '',
     busy: false,
-    draft: { to: '', amount: '', fee: 'slow', chain: 'dogecoin', locked: false, label: '', message: '' },
+    draft: { to: '', amount: '', fee: 'slow', customRate: 0, chain: 'dogecoin', locked: false, label: '', message: '' },
     request: null,
     approval: null,
     parentOrigin: '',
@@ -49,7 +51,10 @@
   });
   if (embed) window.addEventListener('message', onParentMessage);
 
-  boot();
+  window.i18nReady.then(boot).catch((error) => {
+    console.error('[DogeDrop i18n]', error);
+    boot();
+  });
 
   async function boot() {
     if (embed) parent.postMessage({ channel: 'doge-pocket', event: 'ready' }, '*');
@@ -80,7 +85,7 @@
     state.sites = readJson(SITES_KEY) || {};
     if (state.pub) {
       applyChainCache('dogecoin');
-      applyChainCache('dogecoinvm');
+      if (dogevmEnabled) applyChainCache('dogecoinvm');
     }
     state.draft.fee = state.settings.fee || 'slow';
     let next = state.pub ? 'home' : 'welcome';
@@ -102,8 +107,8 @@
   }
 
   function siteName(origin) {
-    if (!origin || origin === 'null' || origin === 'file://') return 'This computer';
-    try { return new URL(origin).host || 'This computer'; } catch { return 'This computer'; }
+    if (!origin || origin === 'null' || origin === 'file://') return t('common.thisComputer');
+    try { return new URL(origin).host || t('common.thisComputer'); } catch { return t('common.thisComputer'); }
   }
 
   function replyOrigin() {
@@ -121,19 +126,19 @@
       const result = await handleParent(method, params || {}, origin);
       parent.postMessage({ channel: 'doge-pocket', id, result }, replyOrigin());
     } catch (error) {
-      parent.postMessage({ channel: 'doge-pocket', id, error: error.message || 'Request failed' }, replyOrigin());
+      parent.postMessage({ channel: 'doge-pocket', id, error: error.message || t('common.requestFailed') }, replyOrigin());
     }
   }
 
   async function handleParent(method, params, origin) {
     if (method === 'getConnectionStatus') return connectionStatus(origin);
     if (method === 'getBalance') {
-      if (!state.sites[origin]?.connected) throw new Error('Not connected');
+      if (!state.sites[origin]?.connected) throw new Error(t('approval.notConnected'));
       await ensureFresh();
       return balancePayload();
     }
     if (method === 'getAddress') {
-      if (!state.sites[origin]?.connected) throw new Error('Not connected');
+      if (!state.sites[origin]?.connected) throw new Error(t('approval.notConnected'));
       const current = currentReceive();
       return { address: current.address, publicKey: current.publicKey };
     }
@@ -154,9 +159,16 @@
       return { open: true };
     }
     if (method === 'connect') return ask(origin, { type: 'connect' });
-    if (method === 'requestTransaction') return ask(origin, { type: 'pay', ...params });
+    if (method === 'requestTransaction') {
+      const raw = String(params.recipientAddress || params.to || '').trim();
+      const parsed = window.DogeChain.parsePayment(raw);
+      if (!dogevmEnabled && parsed.chain === 'dogecoinvm') {
+        throw new Error(t('network.vmDisabled'));
+      }
+      return ask(origin, { type: 'pay', ...params });
+    }
     if (method === 'requestSignedMessage') return ask(origin, { type: 'sign', message: String(params.message || '') });
-    throw new Error('Unknown request');
+    throw new Error(t('approval.unknownRequest'));
   }
 
   function connectionStatus(origin) {
@@ -215,6 +227,9 @@
       const raw = field.value.trim();
       try {
         const parsed = window.DogeChain.parsePayment(raw);
+        if (!dogevmEnabled && parsed.chain === 'dogecoinvm') {
+          throw new Error(t('network.vmDisabled'));
+        }
         const amount = document.getElementById('send-amount');
         if (parsed.amount && amount && !amount.value.trim()) amount.value = parsed.amount;
         const nextLocked = Boolean(parsed.chain);
@@ -237,6 +252,18 @@
       }
       return;
     }
+
+    if (field.id === 'custom-fee') {
+      state.draft.fee = 'custom';
+      state.draft.customRate = stepToRate(field.value);
+      field.style.setProperty('--fill', `${Number(field.value) / 10}%`);
+      const readout = document.getElementById('custom-fee-readout');
+      if (readout) readout.textContent = `${window.DogeChain.formatDoge(window.DogeChain.feeFor(1, 2, state.draft.customRate))} DOGE`;
+      field.closest('.fee-custom')?.classList.add('active');
+      app.querySelectorAll('button.choice').forEach((button) => button.classList.remove('active'));
+      return;
+    }
+
     if (!field.dataset || field.dataset.amount == null) return;
     const cleaned = String(field.value).replace(/[^\d.]/g, '');
     const parts = cleaned.split('.');
@@ -274,7 +301,7 @@
       try {
         if (document.requestStorageAccess) await document.requestStorageAccess();
       } catch {
-        return fail('The browser did not share the wallet. Open it in its own tab once, then come back and try again.');
+        return fail(t('access.denied'));
       }
       loadFromDisk();
     },
@@ -285,11 +312,11 @@
       if (state.request?.type === 'pay' && !state.sites[state.request.origin]?.connected) return go('pay-choice');
       go('welcome');
     },
-    'cancel-request': () => { state.approval?.reject(new Error('Cancelled')); go(state.pub ? 'home' : 'welcome'); },
+    'cancel-request': () => { state.approval?.reject(new Error(t('common.cancelled'))); go(state.pub ? 'home' : 'welcome'); },
     'to-reveal': (form) => {
       const password = form.password.value;
-      if (password.length < 8) return fail('Use a password of at least 8 characters.');
-      if (password !== form.confirm.value) return fail('Those passwords do not match.');
+      if (password.length < 8) return fail(t('create.passwordTooShort'));
+      if (password !== form.confirm.value) return fail(t('create.passwordMismatch'));
       state.pending.password = password;
       state.pending.passphrase = form.passphrase.value;
       state.pending.mnemonic = window.DogeChain.createMnemonic();
@@ -302,25 +329,25 @@
     'finish-create': async (form) => {
       const words = state.pending.mnemonic.split(' ');
       const ok = state.pending.quiz.every((index, position) => form[`word${position}`].value.trim().toLowerCase() === words[index]);
-      if (!form.saved.checked || !ok) return fail('The words do not match your written copy yet.');
+      if (!form.saved.checked || !ok) return fail(t('create.wordsMismatch'));
       await persistHd(state.pending.mnemonic, state.pending.passphrase, state.pending.password);
       state.pending.password = '';
       state.pending = null;
       if (state.request) grantSite(state.request.origin);
-      if (state.request?.type === 'pay') go('review', 'This browser now has your wallet.');
-      else if (state.request) go('approve', 'This browser now has your wallet.');
-      else go('home', 'This browser now has your wallet. Keep the 12 words somewhere safe.');
+      if (state.request?.type === 'pay') go('review', t('create.created'));
+      else if (state.request) go('approve', t('create.created'));
+      else go('home', t('create.createdWithBackup'));
       refresh().catch(() => {});
     },
     'set-restore': (button) => { state.pending.restore = button.dataset.mode; render(); },
     'finish-restore': async (form) => {
       const password = form.password.value;
-      if (password.length < 8) return fail('Use a password of at least 8 characters.');
-      if (password !== form.confirm.value) return fail('Those passwords do not match.');
+      if (password.length < 8) return fail(t('create.passwordTooShort'));
+      if (password !== form.confirm.value) return fail(t('create.passwordMismatch'));
       const passphrase = form.passphrase?.value || '';
       if (state.pending.restore === 'file') {
         const file = form.file.files[0];
-        if (!file) return fail('Choose the backup file.');
+        if (!file) return fail(t('restore.chooseFile'));
         const parsed = JSON.parse(await file.text());
         const vault = parsed.vault || parsed;
         const secret = await window.DogeChain.decryptSecret(vault, password);
@@ -331,7 +358,7 @@
         form.secret.value = '';
       } else {
         const phrase = window.DogeChain.normalizeMnemonic(form.secret.value);
-        if (!window.DogeChain.isMnemonic(phrase)) return fail('Those words are not a valid recovery phrase.');
+        if (!window.DogeChain.isMnemonic(phrase)) return fail(t('restore.invalidWords'));
         const account = window.DogeChain.accountFromMnemonic(phrase, passphrase);
         await storeSecret({ type: 'hd', mnemonic: phrase, passphrase, xpub: account.xpub }, password);
         form.secret.value = '';
@@ -341,13 +368,13 @@
       state.pub.deepScan = state.pub.type === 'hd';
       state.pub.vmDeepScan = state.pub.type === 'hd';
       writeJson(PUBLIC_KEY, state.pub);
-      if (state.request?.type === 'pay') go('review', 'Wallet restored on this browser.');
-      else if (state.request) go('approve', 'Wallet restored on this browser.');
-      else go('home', 'Wallet restored on this browser.');
+      if (state.request?.type === 'pay') go('review', t('restore.done'));
+      else if (state.request) go('approve', t('restore.done'));
+      else go('home', t('restore.done'));
       refresh().catch(() => {});
     },
     home: () => go('home'),
-    send: () => { state.draft = { to: '', amount: '', fee: state.settings.fee || 'normal', chain: state.chain || 'dogecoin', locked: false, label: '', message: '' }; go('send'); },
+    send: () => { state.draft = { to: '', amount: '', fee: state.settings.fee || 'normal', customRate: 0, chain: dogevmEnabled ? (state.chain || 'dogecoin') : 'dogecoin', locked: false, label: '', message: '' }; go('send'); },
     'set-chain': (button) => {
       const chain = button.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
       const to = document.getElementById('send-to');
@@ -391,7 +418,7 @@
     },
     'to-review': () => {
       readDestination();
-      if (!state.draft.chain) return fail('Choose Dogecoin or DogecoinVM. The same address is not the same coins.');
+      if (!state.draft.chain) return fail(t('network.choose'));
       go('review');
     },
     'confirm-pay': async (form) => {
@@ -424,9 +451,9 @@
         state.error = '';
         if (state.approval && state.request?.type === 'pay') {
           const done = state.approval;
-          go('home', 'Payment sent.');
+          go('home', t('send.sent'));
           done.resolve({ approved: true, txid, txId: txid });
-        } else go('home', 'Payment sent.');
+        } else go('home', t('send.sent'));
         refresh().catch(() => {});
       } finally {
         state.busy = false;
@@ -434,7 +461,7 @@
     },
     'approve-connect': async (form) => {
       const password = form?.password?.value || '';
-      if (!password) return fail('Enter the wallet password.');
+      if (!password) return fail(t('send.enterPassword'));
       await openVault(password);
       form.password.value = '';
       grantSite(state.request.origin);
@@ -446,7 +473,7 @@
     },
     'unlock-and-pay': async (form) => {
       const password = form?.password?.value || '';
-      if (!password) return fail('Enter the wallet password.');
+      if (!password) return fail(t('send.enterPassword'));
       await openVault(password);
       form.password.value = '';
       grantSite(state.request.origin);
@@ -457,7 +484,7 @@
       setTimeout(() => {
         if (!done || state.approval !== done) return;
         go(state.pub ? 'home' : 'welcome');
-        done.reject(new Error('Continue in your other wallet. DogeDrop did not send this payment.'));
+        done.reject(new Error(t('payment.externalContinue')));
       }, 50);
     },
     'approve-sign': async (form) => {
@@ -478,26 +505,28 @@
     },
     copy: async (button) => {
       await navigator.clipboard.writeText(button.dataset.copy);
-      button.textContent = 'Copied';
+      button.textContent = t('common.copied');
     },
-    'download-words': () => download('dogecoin-recovery-phrase.txt', `Dogecoin recovery phrase\n\n${state.pending.mnemonic}\n\nAnyone with these words can spend the coins. Keep them offline.\n`, 'text/plain'),
+    'download-words': () => download('dogecoin-recovery-phrase.txt', `${t('create.recoveryFileTitle')}\n\n${state.pending.mnemonic}\n\n${t('create.recoveryFileWarning')}\n`, 'text/plain'),
     'download-backup': () => download('dogecoin-wallet-backup.json', JSON.stringify({ app: 'doge-pocket', version: 1, vault: state.vault }, null, 2), 'application/json'),
     'save-settings': async () => {
       readSettings();
       state.settings.presetChosen = true;
       writeJson(SETTINGS_KEY, state.settings);
-      go('home', 'Settings saved on this browser.');
+      go('home', t('settings.saved'));
       refresh().catch(() => {});
     },
     'test-connection': async (button) => {
       readSettings();
       button.disabled = true;
-      button.textContent = 'Checking…';
+      button.textContent = t('settings.checking');
       try {
         const notes = [];
         const problems = [];
         try { notes.push(await window.DogeNet.createProvider(state.settings).test()); } catch (error) { problems.push(error.message); }
-        try { notes.push(await window.DogeNet.createVmProvider(state.settings).test()); } catch (error) { problems.push(error.message); }
+        if (dogevmEnabled) {
+          try { notes.push(await window.DogeNet.createVmProvider(state.settings).test()); } catch (error) { problems.push(error.message); }
+        }
         state.notice = notes.join(' ');
         state.error = problems.join(' ');
       } catch (error) {
@@ -516,7 +545,7 @@
     },
     'delete-wallet': () => {
       const typed = document.getElementById('delete-address')?.value.trim();
-      if (typed !== currentReceive().address) return fail('Type the current receive address to remove the wallet from this browser.');
+      if (typed !== currentReceive().address) return fail(t('send.typeAddressToDelete'));
       localStorage.removeItem(VAULT_KEY);
       localStorage.removeItem(PUBLIC_KEY);
       localStorage.removeItem(SITES_KEY);
@@ -529,11 +558,11 @@
       state.coins = { dogecoin: [], dogecoinvm: [] };
       state.histories = { dogecoin: [], dogecoinvm: [] };
       state.stale = { dogecoin: false, dogecoinvm: false };
-      go('welcome', 'The wallet was removed from this browser. The coins are still safe if you kept the 12 words.');
+      go('welcome', t('settings.removed'));
     },
     'close-panel': () => {
       state.pinned = false;
-      if (state.approval) state.approval.reject(new Error('Cancelled'));
+      if (state.approval) state.approval.reject(new Error(t('common.cancelled')));
       hidePanel(true);
     },
   };
@@ -579,16 +608,15 @@
     state.busy = true;
     if (state.screen === 'home') render();
     const dogeWatch = watchList('dogecoin');
-    const vmWatch = watchList('dogecoinvm');
-    const [dogeScan, vmScan, dogeFees] = await Promise.all([
+    const [, , dogeFees] = await Promise.all([
       scanChain('dogecoin', dogeWatch),
-      scanChain('dogecoinvm', vmWatch),
+      dogevmEnabled ? scanChain('dogecoinvm', watchList('dogecoinvm')) : Promise.resolve(),
       window.DogeNet.createProvider(state.settings).fees().then((fees) => ({ ok: true, fees })).catch(() => ({ ok: false })),
     ]);
     if (dogeFees.ok) state.fees = dogeFees.fees;
     state.syncedAt = Date.now();
     state.busy = false;
-    state.error = state.chainError[state.chain] || '';
+    state.error = state.chainError[dogevmEnabled ? state.chain : 'dogecoin'] || '';
     if (['home', 'activity', 'receive', 'send', 'review'].includes(state.screen)) render();
   }
 
@@ -619,7 +647,7 @@
         state.histories[chain] = saved?.history || [];
         state.stale[chain] = false;
         state.chainError[chain] = state.histories[chain].length
-          ? 'Activity could not be refreshed. Showing the last saved payments. The balance is current.'
+          ? t('network.historyUnavailable')
           : error.message;
         saveChainCache(chain);
         return;
@@ -629,7 +657,7 @@
       saveChainCache(chain);
     } catch (error) {
       if (applyChainCache(chain)) {
-        state.chainError[chain] = `The network did not answer (${error.message}). Showing the last saved balance and activity.`;
+        state.chainError[chain] = t('network.offlineCached', { error: error.message });
       } else {
         state.chainError[chain] = error.message;
       }
@@ -668,7 +696,10 @@
   }
 
   function paymentPlan() {
-    if (state.draft.chain !== 'dogecoin' && state.draft.chain !== 'dogecoinvm') throw new Error('Choose Dogecoin or DogecoinVM. The same address is not the same coins.');
+    if (!dogevmEnabled && state.draft.chain === 'dogecoinvm') {
+      throw new Error(t('network.vmDisabled'));
+    }
+    if (state.draft.chain !== 'dogecoin' && state.draft.chain !== 'dogecoinvm') throw new Error(t('network.choose'));
     const amount = window.DogeChain.dogeToKoinu(state.draft.amount);
     const rate = feeRate();
     const coins = coinsFor(state.draft.chain);
@@ -692,12 +723,59 @@
     return keys;
   }
 
+  function feeSpan() {
+    if ((state.draft.chain || state.chain) === 'dogecoinvm') return { min: 10, max: 5000 };
+    const min = 1000;
+    const max = Math.max(min * 2, state.fees.fast || 0, state.fees.normal || 0, state.fees.slow || 0);
+    return { min, max };
+  }
+
+  function presetRate(name) {
+    if ((state.draft.chain || state.chain) === 'dogecoinvm') return { slow: 100, normal: 200, fast: 500 }[name] || 200;
+    return state.fees[name] || state.fees.normal || 10000;
+  }
+
+  function shownFeeRate() {
+    if (state.draft.fee === 'custom') return stepToRate(rateToStep(state.draft.customRate || feeSpan().min));
+    const name = ['slow', 'normal', 'fast'].includes(state.draft.fee) ? state.draft.fee : 'normal';
+    return presetRate(name);
+  }
+
+  function rateToStep(rate) {
+    const { min, max } = feeSpan();
+    const clamped = Math.min(max, Math.max(min, Number(rate) || min));
+    if (max === min) return 0;
+    const t = (Math.log(clamped) - Math.log(min)) / (Math.log(max) - Math.log(min));
+    return Math.round(t * 1000);
+  }
+
+  function stepToRate(step) {
+    const { min, max } = feeSpan();
+    const t = Math.min(1000, Math.max(0, Number(step) || 0)) / 1000;
+    if (max === min) return min;
+    return Math.round(Math.exp(Math.log(min) + t * (Math.log(max) - Math.log(min))));
+  }
+
+  function feeSlider() {
+    const step = rateToStep(shownFeeRate());
+    const readout = `${window.DogeChain.formatDoge(window.DogeChain.feeFor(1, 2, shownFeeRate()))} DOGE`;
+    return `<div class="fee-custom${state.draft.fee === 'custom' ? ' active' : ''}"><div class="fee-custom-head"><span>${t('common.custom')}</span><strong class="num" id="custom-fee-readout">${esc(readout)}</strong></div><input class="fee-range" id="custom-fee" type="range" min="0" max="1000" step="1" value="${step}" style="--fill:${step / 10}%" aria-label="${t('send.customFee')}"><span class="hint">${t('send.feeHint')}</span></div>`;
+  }
+
   function feeRate() {
     const chain = state.draft.chain || state.chain;
+
+    if (state.draft.fee === 'custom') {
+      const { min, max } = feeSpan();
+      const rate = Math.min(max, Math.max(min, Number(state.draft.customRate) || min));
+      return BigInt(Math.round(rate));
+    }
+
     if (chain === 'dogecoinvm') {
       const table = { slow: 100, normal: 200, fast: 500 };
       return BigInt(table[state.draft.fee || 'normal'] || 200);
     }
+
     return BigInt(state.fees[state.draft.fee || state.settings.fee] || state.fees.normal || 10000);
   }
 
@@ -741,13 +819,13 @@
 
   function chainWait(chain) {
     return chain === 'dogecoinvm'
-      ? 'A DogecoinVM payment is final in about a fifth of a second.'
-      : 'A Dogecoin confirmation usually takes 1 to 10 minutes.';
+      ? t('network.vmWait')
+      : t('network.dogeWait');
   }
 
   function balancePayload() {
     const koinu = state.balances.dogecoin || 0n;
-    const vmKnown = state.balances.dogecoinvm != null;
+    const vmKnown = dogevmEnabled && state.balances.dogecoinvm != null;
     const vm = vmKnown ? state.balances.dogecoinvm : 0n;
     const safe = (value) => (value <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(value) : value.toString());
     return {
@@ -765,8 +843,11 @@
     const explicit = request.dogeAmount ?? request.amount;
     try {
       const parsed = window.DogeChain.parsePayment(raw);
+      if (!dogevmEnabled && parsed.chain === 'dogecoinvm') {
+        throw new Error(t('network.vmDisabled'));
+      }
       state.draft.to = raw;
-      state.draft.chain = parsed.chain || '';
+      state.draft.chain = parsed.chain || (dogevmEnabled ? '' : 'dogecoin');
       state.draft.locked = Boolean(parsed.chain);
       state.draft.amount = explicit != null && explicit !== '' ? String(explicit) : (parsed.amount || '');
       state.draft.label = parsed.label || '';
@@ -774,7 +855,7 @@
       state.draft.fee = ['slow', 'normal', 'fast'].includes(request.fee)
       ? request.fee
       : (state.settings.fee || 'slow');
-      state.error = state.draft.chain ? '' : 'Choose Dogecoin or DogecoinVM. The same address is not the same coins.';
+      state.error = state.draft.chain ? '' : t('network.choose');
     } catch (error) {
       state.draft.to = raw;
       state.draft.chain = '';
@@ -789,10 +870,16 @@
     const amount = document.getElementById('send-amount');
     const raw = field ? field.value.trim() : state.draft.to;
     const parsed = window.DogeChain.parsePayment(raw);
+    if (!dogevmEnabled && parsed.chain === 'dogecoinvm') {
+      throw new Error(t('network.vmDisabled'));
+    }
     state.draft.to = raw;
     if (parsed.chain) {
       state.draft.chain = parsed.chain;
       state.draft.locked = true;
+    } else if (!dogevmEnabled) {
+      state.draft.chain = 'dogecoin';
+      state.draft.locked = false;
     } else if (!state.draft.chain) state.draft.chain = state.chain || '';
     else state.draft.locked = false;
     if (amount && amount.value.trim()) state.draft.amount = amount.value.trim();
@@ -856,7 +943,7 @@
   }
 
   function addressField(address) {
-    return `<div class="copybox"><input class="num" readonly value="${esc(address)}" aria-label="Dogecoin address" spellcheck="false"><button type="button" class="copy" data-action="copy" data-copy="${esc(address)}" aria-label="Copy address">${icon('content_copy')}</button></div>`;
+    return `<div class="copybox"><input class="num" readonly value="${esc(address)}" aria-label="${esc(t('common.address'))}" spellcheck="false"><button type="button" class="copy" data-action="copy" data-copy="${esc(address)}" aria-label="${esc(t('common.copyAddress'))}">${icon('content_copy')}</button></div>`;
   }
 
   function qrBlock(address) {
@@ -867,7 +954,7 @@
     let host = '';
 
     if (state.parentOrigin === 'null') {
-      host = 'this computer';
+      host = t('common.thisComputerLower');
     } else if (state.parentOrigin) {
       try {
         host = new URL(state.parentOrigin).host;
@@ -885,8 +972,7 @@
           <div class="banner">
             ${icon('shield')}
             <span>
-              This site is hosting the wallet itself, so its scripts can reach the wallet.
-              For a real integration, load the wallet from its own address.
+              ${t('debug.sameOrigin')}
             </span>
           </div>
         `
@@ -914,7 +1000,7 @@
           class="icon-btn"
           type="button"
           data-action="refresh"
-          aria-label="Refresh"
+          aria-label="${esc(t('common.refresh'))}"
         >
           ${icon('refresh')}
         </button>
@@ -929,7 +1015,7 @@
             class="icon-btn"
             type="button"
             data-action="lock"
-            aria-label="Lock"
+            aria-label="${esc(t('common.lock'))}"
           >
             ${icon('lock')}
           </button>
@@ -940,7 +1026,7 @@
             type="button"
             data-action="go-unlock"
             data-next="${here}"
-            aria-label="Unlock"
+            aria-label="${t('common.unlock')}"
           >
             ${icon('lock_open')}
           </button>
@@ -952,7 +1038,7 @@
           class="icon-btn"
           type="button"
           data-action="close-panel"
-          aria-label="Close"
+          aria-label="${esc(t('common.close'))}"
         >
           ${icon('close')}
         </button>
@@ -1001,11 +1087,11 @@
   }
 
   function walletStatus() {
-    if (!state.pub) return { cls: '', text: 'New' };
+    if (!state.pub) return { cls: '', text: t('status.new') };
     const linked = !!(embed && state.parentOrigin && state.sites[state.parentOrigin]?.connected);
-    if (!state.secret) return { cls: 'wait', text: 'Locked' };
-    if (linked) return { cls: 'on', text: 'Connected' };
-    return { cls: 'on', text: 'Unlocked' };
+    if (!state.secret) return { cls: 'wait', text: t('status.locked') };
+    if (linked) return { cls: 'on', text: t('status.connected') };
+    return { cls: 'on', text: t('status.unlocked') };
   }
 
   function tabBar() {
@@ -1020,15 +1106,15 @@
     if (hidden.includes(state.screen)) return '';
 
     const tabs = [
-      ['home', 'account_balance_wallet', 'Home'],
-      ['send', 'send', 'Send'],
-      ['receive', 'qr_code_2', 'Receive'],
-      ['activity', 'receipt_long', 'Activity'],
-      ['settings', 'settings', 'Settings'],
+      ['home', 'account_balance_wallet', t('nav.home')],
+      ['send', 'send', t('nav.send')],
+      ['receive', 'qr_code_2', t('nav.receive')],
+      ['activity', 'receipt_long', t('nav.activity')],
+      ['settings', 'settings', t('nav.settings')],
     ];
 
     return `
-      <nav class="tabbar" aria-label="Wallet">
+      <nav class="tabbar" aria-label="${esc(t('nav.wallet'))}">
         ${tabs.map(([action, glyph, label]) => `
           <button
             type="button"
@@ -1049,32 +1135,28 @@
   }
 
   function caution() {
-    return shell('Read this first', `
+    return shell(t('caution.title'), `
       <p class="lead">
-        DogeDrop has not been audited.
-        Be careful. Test with a small amount only.
-        A payment cannot be undone, and coins can be lost if something goes wrong.
+        ${t('caution.body')}
       </p>
 
-      ${button('primary', 'dismiss-caution', 'check', 'I understand')}
+      ${button('primary', 'dismiss-caution', 'check', t('caution.accept'))}
     `, 'shield');
   }
 
   function access() {
-    return shell('Use the same wallet here', `
+    return shell(t('access.title'), `
       <p class="lead">
-        Browsers keep an embedded wallet separate until you allow it.
-        Allowing it lets this page open the wallet you already created,
-        instead of making a new one.
+        ${t('access.body')}
       </p>
 
-      ${button('primary', 'allow-storage', 'shield', 'Use my wallet here')}
+      ${button('primary', 'allow-storage', 'shield', t('access.allow'))}
 
       <p class="foot">
         <a href="index.html" target="_blank" rel="noopener">
-          Open the wallet in its own tab
+          ${t('access.openTab')}
         </a>
-        if the browser asks you to visit it first.
+        ${t('access.openTabHint')}
       </p>
     `, 'shield');
   }
@@ -1083,35 +1165,33 @@
     const waiting = state.request
       ? `<div class="banner">
           ${icon('link')}
-          <span>${esc(siteName(state.request.origin))} is waiting for a wallet.</span>
+          <span>${esc(t('welcome.waiting', { site: siteName(state.request.origin) }))}</span>
         </div>`
       : '';
 
-    return shell('DogeDrop stays with you', `
+    return shell(t('welcome.title'), `
       ${waiting}
 
       <p class="lead">
-        Your wallet, your keys. Stored securely in this browser.
+        ${t('welcome.body')}
       </p>
 
       <div class="stack">
-        ${button('primary', 'start-create', 'add_card', 'Create a new wallet')}
-        ${button('ghost', 'start-restore', 'key', 'I already have a wallet')}
+        ${button('primary', 'start-create', 'add_card', t('welcome.create'))}
+        ${button('ghost', 'start-restore', 'key', t('welcome.existing'))}
       </div>
     `, 'account_balance_wallet');
   }
 
   function password() {
-    return shell('Choose a password', `
+    return shell(t('create.passwordTitle'), `
       <p class="lead">
-        This password locks the wallet on this browser.
-        It is not sent anywhere.
-        The 12 words, which come next, are what can restore the coins on another computer.
+        ${t('create.passwordHelp')}
       </p>
 
       <form class="stack" data-action="to-reveal">
         <label>
-          Password
+          ${t('common.password')}
           <input
             name="password"
             type="password"
@@ -1122,7 +1202,7 @@
         </label>
 
         <label>
-          Password again
+          ${t('common.passwordAgain')}
           <input
             name="confirm"
             type="password"
@@ -1133,19 +1213,19 @@
         </label>
 
         <label>
-          Extra word, optional
+          ${t('common.extraWord')}
           <span class="hint">
-            Leave this empty unless you already use a BIP39 passphrase.
+            ${t('create.passphraseHint')}
           </span>
           <input name="passphrase" autocomplete="off">
         </label>
 
         <button class="primary" type="submit">
           ${icon('visibility')}
-          <span>Show my 12 words</span>
+          <span>${t('create.showWords')}</span>
         </button>
 
-        ${button('ghost', 'back-welcome', 'arrow_back', 'Back')}
+        ${button('ghost', 'back-welcome', 'arrow_back', t('common.back'))}
       </form>
     `, 'password');
   }
@@ -1160,11 +1240,9 @@
         </div>
       `).join('');
 
-    return shell('Write down these 12 words', `
+    return shell(t('create.revealTitle'), `
       <p class="lead">
-        This is the only backup.
-        If you lose the words, the coins cannot be recovered by anyone.
-        The next step asks for three of them.
+        ${t('create.revealHelp')}
       </p>
 
       <div class="words">
@@ -1172,18 +1250,18 @@
       </div>
 
       <div class="row">
-        ${button('ghost', 'copy', 'content_copy', 'Copy words', `data-copy="${esc(state.pending.mnemonic)}"`)}
-        ${button('ghost', 'download-words', 'download', 'Download')}
+        ${button('ghost', 'copy', 'content_copy', t('create.copyWords'), `data-copy="${esc(state.pending.mnemonic)}"`)}
+        ${button('ghost', 'download-words', 'download', t('common.download'))}
       </div>
 
-      ${button('primary', 'to-quiz', 'check', 'I wrote them down')}
+      ${button('primary', 'to-quiz', 'check', t('create.wroteWords'))}
     `, 'edit_note');
   }
 
   function confirm() {
     const fields = state.pending.quiz.map((index, position) => `
       <label>
-        Word ${index + 1}
+        ${t('create.wordNumber', { number: index + 1 })}
         <input
           name="word${position}"
           autocomplete="off"
@@ -1194,7 +1272,7 @@
       </label>
     `).join('');
 
-    return shell('Check the backup', `
+    return shell(t('create.confirmTitle'), `
       <form class="stack" data-action="finish-create">
         ${fields}
 
@@ -1207,14 +1285,13 @@
           >
           <span class="track" aria-hidden="true"></span>
           <span>
-            I understand nobody, including this website,
-            can restore the words for me.
+            ${t('create.confirmDisclaimer')}
           </span>
         </label>
 
         <button class="primary" type="submit">
           ${icon('save')}
-          <span>Save wallet on this browser</span>
+          <span>${t('create.saveWallet')}</span>
         </button>
       </form>
     `, 'fact_check');
@@ -1224,9 +1301,9 @@
     const mode = state.pending.restore || 'words';
 
     const choices = [
-      ['words', 'edit_note', 'Words', '12 or 24 word phrase'],
-      ['wif', 'key', 'Private key', 'Starts with Q'],
-      ['file', 'download', 'File', 'Encrypted backup'],
+      ['words', 'edit_note', t('restore.words'), t('restore.wordsDetail')],
+      ['wif', 'key', t('common.privateKey'), t('restore.wifDetail')],
+      ['file', 'download', t('restore.file'), t('restore.encryptedBackup')],
     ].map(([id, glyph, title, detail]) => `
       <button
         type="button"
@@ -1248,7 +1325,7 @@
     const secret = mode === 'file'
       ? `
         <label>
-          Encrypted backup
+          ${t('restore.encryptedBackup')}
           <input
             name="file"
             type="file"
@@ -1259,7 +1336,7 @@
       `
       : `
         <label>
-          ${mode === 'wif' ? 'Private key' : '12 or 24 words'}
+          ${mode === 'wif' ? t('common.privateKey') : t('restore.wordsOr24')}
           <textarea
             name="secret"
             autocomplete="off"
@@ -1271,17 +1348,17 @@
 
         ${mode === 'words' ? `
           <label>
-            Extra word, optional
+            ${t('common.extraWord')}
             <span class="hint">
-              Only if you created the phrase with a passphrase.
+              ${t('restore.passphraseHint')}
             </span>
             <input name="passphrase" autocomplete="off">
           </label>
         ` : ''}
       `;
 
-    return shell('Restore a wallet', `
-      <div class="modes" role="radiogroup" aria-label="How to restore">
+    return shell(t('restore.title'), `
+      <div class="modes" role="radiogroup" aria-label="${esc(t('restore.how'))}">
         ${choices}
       </div>
 
@@ -1289,7 +1366,7 @@
         ${secret}
 
         <label>
-          Password for this browser
+          ${t('restore.passwordForBrowser')}
           <input
             name="password"
             type="password"
@@ -1300,7 +1377,7 @@
         </label>
 
         <label>
-          Password again
+          ${t('common.passwordAgain')}
           <input
             name="confirm"
             type="password"
@@ -1312,15 +1389,16 @@
 
         <button class="primary" type="submit">
           ${icon('key')}
-          <span>Restore</span>
+          <span>${t('common.restore')}</span>
         </button>
 
-        ${button('ghost', 'back-welcome', 'arrow_back', 'Back')}
+        ${button('ghost', 'back-welcome', 'arrow_back', t('common.back'))}
       </form>
     `, 'key');
   }
 
   function chainButtons(selected, locked) {
+    if (!dogevmEnabled) return '';
     return `
       <div class="chains">
         ${['dogecoin', 'dogecoinvm'].map((id) => `
@@ -1343,20 +1421,22 @@
   }
 
   function vmHelp() {
-    return `<p class="hint">DogecoinVM is a separate network. Coins are not shared with Dogecoin.</p>`;
+    return `<p class="hint">${t('network.vmHelp')}</p>`;
   }
 
   function home() {
-    const chain = state.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+    const chain = dogevmEnabled && state.chain === 'dogecoinvm'
+      ? 'dogecoinvm'
+      : 'dogecoin';
     const current = currentReceive(chain);
     const link = window.DogeChain.paymentUri(chain, current.address);
     const dollars = chain === 'dogecoin' ? money(state.balances.dogecoin) : '';
 
     const provider = chain === 'dogecoinvm'
       ? vmProvider().label
-      : (state.busy ? 'Checking the network…' : window.DogeNet.createProvider(state.settings).label);
+      : (state.busy ? t('network.checking') : window.DogeNet.createProvider(state.settings).label);
 
-    const savedCopy = state.stale[chain] ? ' · last saved copy' : '';
+    const savedCopy = state.stale[chain] ? t('network.savedCopy') : '';
 
     const last = state.lastTx
       ? `<p class="foot">
@@ -1388,7 +1468,7 @@
 
       <p class="foot">
         ${icon('shield')}
-        <span>Keys stay in this browser.</span>
+        <span>${t('network.keysLocal')}</span>
       </p>
 
       ${last}
@@ -1397,9 +1477,9 @@
 
   function send() {
     const fees = [
-      ['slow', 'Slow', 'schedule'],
-      ['normal', 'Normal', 'payments'],
-      ['fast', 'Fast', 'bolt'],
+      ['slow', t('send.slow'), 'schedule'],
+      ['normal', t('send.normal'), 'payments'],
+      ['fast', t('send.fast'), 'bolt'],
     ].map(([name, label, glyph]) => `
       <button
         type="button"
@@ -1415,18 +1495,18 @@
       </button>
     `).join('');
 
-    const locked = state.draft.locked
-      ? '<p class="hint">Network selected by the payment link.</p>'
-      : '<p class="hint">Make sure you select the correct network.</p>';
+    const locked = !dogevmEnabled ? '' : state.draft.locked
+      ? `<p class="hint">${t('network.linkSelected')}</p>`
+      : `<p class="hint">${t('network.checkSelection')}</p>`;
 
-    return shell(`Send on ${chainName(state.draft.chain)}`, `
+    return shell(dogevmEnabled ? `${t('send.titleChain', { chain: chainName(state.draft.chain) })}` : t('nav.send'), `
       <form class="stack" data-action="to-review">
         ${chainButtons(state.draft.chain, state.draft.locked)}
         ${state.draft.chain === 'dogecoinvm' ? vmHelp() : ''}
         ${locked}
 
         <label>
-          To
+          ${t('common.to')}
           <input
             id="send-to"
             value="${esc(state.draft.to)}"
@@ -1438,10 +1518,10 @@
 
         <div class="field">
           <div class="field-head">
-            <span>Amount</span>
+            <span>${t('common.amount')}</span>
             <button type="button" class="link" data-action="fill-max">
               ${icon('account_balance_wallet')}
-              <span>Send all</span>
+              <span>${t('send.all')}</span>
             </button>
           </div>
 
@@ -1459,9 +1539,11 @@
           ${fees}
         </div>
 
+        ${feeSlider()}
+
         <button class="primary" type="submit">
           ${icon('fact_check')}
-          <span>Review</span>
+          <span>${t('send.review')}</span>
         </button>
       </form>
     `, 'send');
@@ -1475,22 +1557,24 @@
     } catch (error) {
       const choose = state.draft.chain
         ? `<div class="card">
+            ${dogevmEnabled ? `
             <p>
-              Chain<br>
+              ${t('common.chain')}<br>
               <strong>${esc(chainName(state.draft.chain))}</strong>
             </p>
+            ` : ''}
             <p>
-              To<br>
+              ${t('common.to')}<br>
               <span class="num">${esc(payAddress())}</span>
             </p>
             <p>
-              Amount<br>
+              ${t('common.amount')}<br>
               <strong class="num">${esc(state.draft.amount)} DOGE</strong>
             </p>
           </div>`
         : chainButtons('', false);
 
-      return shell('Confirm payment', `
+      return shell(t('send.confirmTitle'), `
         ${choose}
 
         <div class="banner bad">
@@ -1501,23 +1585,23 @@
           'ghost',
           state.request?.type === 'pay' ? 'cancel-request' : 'edit-send',
           'arrow_back',
-          'Back'
+          t('common.back')
         )}
       `, 'verified');
     }
 
     const change = plan.change > 0n
       ? `<p>
-          Change:
+          ${t('send.change')}
           <strong class="num">
             ${esc(window.DogeChain.formatDoge(plan.change))} DOGE
           </strong>
         </p>`
-      : '<p>Small remainder included in the network fee.</p>';
+      : `<p>${t('send.remainder')}</p>`;
 
     const password = state.secret
       ? ''
-      : '<label>Wallet password<input name="password" type="password" autocomplete="current-password" required></label>';
+      : `<label>${t('common.walletPassword')}<input name="password" type="password" autocomplete="current-password" required></label>`;
 
     const back = state.request?.type === 'pay'
       ? 'cancel-request'
@@ -1528,30 +1612,32 @@
       .map((item) => `<p>${esc(item)}</p>`)
       .join('');
 
-    return shell('Confirm payment', `
+    return shell(t('send.confirmTitle'), `
       <form class="stack" data-action="confirm-pay">
         <div class="card">
+          ${dogevmEnabled ? `
           <p>
-            Chain<br>
+            ${t('common.chain')}<br>
             <strong>${esc(chainName(state.draft.chain))}</strong>
           </p>
+          ` : ''}
 
           <p>
-            To<br>
+            ${t('common.to')}<br>
             <span class="num">${esc(payAddress())}</span>
           </p>
 
           ${note}
 
           <p>
-            Amount<br>
+            ${t('common.amount')}<br>
             <strong class="num">
               ${esc(window.DogeChain.formatDoge(plan.amount || plan.outputs[0].value))} DOGE
             </strong>
           </p>
 
           <p>
-            Network fee<br>
+            ${t('send.networkFee')}<br>
             <strong class="num">
               ${esc(window.DogeChain.formatDoge(plan.fee))} DOGE
             </strong>
@@ -1568,10 +1654,10 @@
           ${state.busy ? 'disabled' : ''}
         >
           ${icon('verified')}
-          <span>${state.busy ? 'Sending…' : 'Send now'}</span>
+          <span>${state.busy ? t('send.sending') : t('send.sendNow')}</span>
         </button>
 
-        ${button('ghost', back, 'arrow_back', 'Back')}
+        ${button('ghost', back, 'arrow_back', t('common.back'))}
       </form>
     `, 'verified');
   }
@@ -1581,14 +1667,16 @@
   }
 
   function receive() {
-    const chain = state.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+    const chain = dogevmEnabled && state.chain === 'dogecoinvm'
+      ? 'dogecoinvm'
+      : 'dogecoin';
 
     if (state.chainError[chain]) state.error = state.chainError[chain];
 
     const current = currentReceive(chain);
     const link = window.DogeChain.paymentUri(chain, current.address);
 
-    return shell('Receive', `
+    return shell(t('nav.receive'), `
       ${chainButtons(chain, false)}
       ${chain === 'dogecoinvm' ? vmHelp() : ''}
 
@@ -1599,7 +1687,9 @@
   }
 
   function activity() {
-    const chain = state.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+    const chain = dogevmEnabled && state.chain === 'dogecoinvm'
+      ? 'dogecoinvm'
+      : 'dogecoin';
 
     if (state.chainError[chain]) state.error = state.chainError[chain];
 
@@ -1607,8 +1697,8 @@
       (state.settings.preset === 'core' || state.settings.preset === 'dogego');
 
     const empty = quiet
-      ? 'A node can find coins to spend, but it does not keep an address history.'
-      : 'No payments found for this wallet yet.';
+      ? t('activity.noHistoryNode')
+      : t('activity.empty');
 
     const rows = (state.histories[chain] || []).length
       ? state.histories[chain].map((tx) => `
@@ -1619,14 +1709,14 @@
             rel="noopener"
           >
             <span>
-              ${tx.time ? esc(new Date(tx.time * 1000).toLocaleString()) : 'Watched'}
+              ${tx.time ? esc(new Date(tx.time * 1000).toLocaleString()) : t('activity.watched')}
             </span>
             <strong>${esc(tx.change || '')}</strong>
           </a>
         `).join('')
       : (state.chainError[chain] ? '' : `<p class="hint">${esc(empty)}</p>`);
 
-    return shell('Activity', `
+    return shell(t('nav.activity'), `
       ${chainButtons(chain, false)}
 
       <div class="card list">
@@ -1636,8 +1726,9 @@
   }
 
   function settingsTabs(selected) {
+    if (!dogevmEnabled) return '';
     return `
-      <div class="chains" role="tablist" aria-label="Which chain to configure">
+      <div class="chains" role="tablist" aria-label="${esc(t('settings.chainTab'))}">
         ${['dogecoin', 'dogecoinvm'].map((id) => `
           <button
             type="button"
@@ -1666,41 +1757,41 @@
 
     const lookup = `
       <label>
-        Where to look up coins
+        ${t('settings.lookup')}
         <select name="vmPreset">
           <option value="metaldoge" ${preset === 'metaldoge' ? 'selected' : ''}>
             MetalDoge (vm.dogedrop.org)
           </option>
           <option value="custom" ${preset === 'custom' ? 'selected' : ''}>
-            Custom
+            ${t('common.custom')}
           </option>
         </select>
       </label>
     `;
 
     const lookupUrl = preset === 'custom'
-      ? field('vmUrl', 'Explorer address', s.vmUrl, 'https://vm.dogedrop.org')
+      ? field('vmUrl', t('settings.explorerAddress'), s.vmUrl, 'https://vm.dogedrop.org')
       : '';
 
     const send = `
       <label>
-        Where to send the signed payment
+        ${t('settings.broadcast')}
         <select name="vmBroadcast">
           <option value="same" ${broadcast === 'same' ? 'selected' : ''}>
-            Same as the explorer
+            ${t('settings.sameExplorer')}
           </option>
           <option value="metaldoge" ${broadcast === 'metaldoge' ? 'selected' : ''}>
             MetalDoge (vm.dogedrop.org)
           </option>
           <option value="custom" ${broadcast === 'custom' ? 'selected' : ''}>
-            Custom
+            ${t('common.custom')}
           </option>
         </select>
       </label>
     `;
 
     const sendUrl = broadcast === 'custom'
-      ? field('vmBroadcastUrl', 'Send address', s.vmBroadcastUrl, 'https://vm.dogedrop.org')
+      ? field('vmBroadcastUrl', t('settings.sendAddress'), s.vmBroadcastUrl, 'https://vm.dogedrop.org')
       : '';
 
     return `
@@ -1720,8 +1811,8 @@
       `).join('');
 
     const broadcasts = [
-      ['same', 'Same as above'],
-      ['public', 'Public explorers'],
+      ['same', t('settings.sameAbove')],
+      ['public', t('settings.publicExplorers')],
       ['blockcypher', 'BlockCypher'],
       ['core', 'Dogecoin Core'],
       ['dogego', 'DogeGo'],
@@ -1738,88 +1829,89 @@
 
     return `
       <label>
-        Where to look up coins
+        ${t('settings.lookup')}
         <select name="preset">
           ${options}
         </select>
       </label>
 
       <label>
-        Where to send the signed payment
+        ${t('settings.broadcast')}
         <select name="broadcast">
           ${broadcasts}
         </select>
       </label>
 
       ${s.preset === 'blockcypher' || s.broadcast === 'blockcypher'
-        ? field('blockcypherToken', 'BlockCypher token, optional', s.blockcypherToken)
+        ? field('blockcypherToken', t('settings.blockcypherToken'), s.blockcypherToken)
         : ''}
 
       ${s.preset === 'sochain'
-        ? field('sochainKey', 'SoChain API key', s.sochainKey)
+        ? field('sochainKey', t('settings.sochainKey'), s.sochainKey)
         : ''}
 
       ${core ? `
-        ${field('coreUrl', 'Dogecoin Core URL', s.coreUrl, 'https://node.example.com:22555')}
-        ${field('coreUser', 'RPC user', s.coreUser)}
-        ${field('corePassword', 'RPC password', s.corePassword, '', 'password')}
+        ${field('coreUrl', t('settings.coreUrl'), s.coreUrl, 'https://node.example.com:22555')}
+        ${field('coreUser', t('settings.rpcUser'), s.coreUser)}
+        ${field('corePassword', t('settings.rpcPassword'), s.corePassword, '', 'password')}
       ` : ''}
 
       ${dogego ? `
-        ${field('dogegoUrl', 'DogeGo URL', s.dogegoUrl, 'https://node.example.com:22555')}
-        ${field('dogegoUser', 'RPC user', s.dogegoUser)}
-        ${field('dogegoPassword', 'RPC password', s.dogegoPassword, '', 'password')}
+        ${field('dogegoUrl', t('settings.dogegoUrl'), s.dogegoUrl, 'https://node.example.com:22555')}
+        ${field('dogegoUser', t('settings.rpcUser'), s.dogegoUser)}
+        ${field('dogegoPassword', t('settings.rpcPassword'), s.dogegoPassword, '', 'password')}
       ` : ''}
 
       ${meme
-        ? field('memetrackerUrl', 'MemeTracker URL', s.memetrackerUrl, 'https://tracker.example.com')
+        ? field('memetrackerUrl', t('settings.memetrackerUrl'), s.memetrackerUrl, 'https://tracker.example.com')
         : ''}
     `;
   }
 
   function settings() {
     const s = state.settings;
-    const tab = state.settingsTab === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+    const tab = dogevmEnabled && state.settingsTab === 'dogecoinvm'
+      ? 'dogecoinvm'
+      : 'dogecoin';
     const chainFields = tab === 'dogecoinvm' ? vmSettings(s) : dogeSettings(s);
 
-    return shell('Connection', `
+    return shell(t('settings.title'), `
       ${settingsTabs(tab)}
 
       <form id="settings-form" class="stack" data-action="save-settings">
         ${chainFields}
 
         <label>
-          Lock after
+          ${t('settings.lockAfter')}
           <select name="autolockMinutes">
             <option value="5" ${s.autolockMinutes == 5 ? 'selected' : ''}>
-              5 minutes
+              ${t('settings.fiveMinutes')}
             </option>
             <option value="15" ${s.autolockMinutes == 15 ? 'selected' : ''}>
-              15 minutes
+              ${t('settings.fifteenMinutes')}
             </option>
             <option value="60" ${s.autolockMinutes == 60 ? 'selected' : ''}>
-              1 hour
+              ${t('settings.oneHour')}
             </option>
             <option value="0" ${s.autolockMinutes == 0 ? 'selected' : ''}>
-              When I close this page
+              ${t('settings.onClose')}
             </option>
           </select>
         </label>
 
         <button class="primary" type="submit">
           ${icon('save')}
-          <span>Save</span>
+          <span>${t('common.save')}</span>
         </button>
 
-        ${button('ghost', 'test-connection', 'wifi_tethering', 'Test connection')}
-        ${button('ghost', 'download-backup', 'download', 'Download encrypted backup')}
-        ${button('ghost', 'go-unlock', 'visibility', 'Show recovery phrase', 'data-next="backup"')}
+        ${button('ghost', 'test-connection', 'wifi_tethering', t('settings.testConnection'))}
+        ${button('ghost', 'download-backup', 'download', t('settings.downloadBackup'))}
+        ${button('ghost', 'go-unlock', 'visibility', t('settings.showRecovery'), 'data-next="backup"')}
       </form>
 
       <div class="card">
         <p>
-          Removing the wallet from this browser does not move the coins.
-          Type the receive address to confirm.
+          ${t('settings.deleteExplanation')}
         </p>
 
         <input
@@ -1829,7 +1921,7 @@
           spellcheck="false"
         >
 
-        ${button('danger', 'delete-wallet', 'delete', 'Remove from this browser')}
+        ${button('danger', 'delete-wallet', 'delete', t('settings.remove'))}
       </div>
     `, 'settings');
   }
@@ -1847,30 +1939,30 @@
       : addressField(state.secret.wif || '');
 
     return shell(
-      state.secret.mnemonic ? 'Recovery phrase' : 'Private key',
+      state.secret.mnemonic ? t('backup.recoveryPhrase') : t('common.privateKey'),
       `
         <div class="card">
           ${words}
 
           ${state.secret.passphrase ? `
             <p>
-              Extra word:
+              ${t('backup.extraWord')}
               <strong>${esc(state.secret.passphrase)}</strong>
             </p>
           ` : ''}
         </div>
 
-        ${button('ghost', 'home', 'visibility', 'Hide')}
+        ${button('ghost', 'home', 'visibility', t('common.hide'))}
       `,
       state.secret.mnemonic ? 'visibility' : 'key'
     );
   }
 
   function unlock() {
-    return shell('Unlock', `
+    return shell(t('common.unlock'), `
       <form class="stack" data-action="do-unlock">
         <label>
-          Password
+          ${t('common.password')}
           <input
             name="password"
             type="password"
@@ -1881,10 +1973,10 @@
 
         <button class="primary" type="submit">
           ${icon('lock_open')}
-          <span>Unlock</span>
+          <span>${t('common.unlock')}</span>
         </button>
 
-        ${button('ghost', 'home', 'arrow_back', 'Back')}
+        ${button('ghost', 'home', 'arrow_back', t('common.back'))}
       </form>
     `, 'lock_open');
   }
@@ -1897,13 +1989,12 @@
     if (state.request.type === 'sign') {
       const password = state.secret
         ? ''
-        : '<label>Wallet password<input name="password" type="password" autocomplete="current-password" required></label>';
+        : `<label>${t('common.walletPassword')}<input name="password" type="password" autocomplete="current-password" required></label>`;
 
-      return shell('Sign a message', `
+      return shell(t('approval.signTitle'), `
         <form class="stack" data-action="approve-sign">
           <p>
-            ${host} wants a signature from your wallet.
-            This does not spend coins.
+            ${esc(t('approval.signExplanation', { site: siteName(state.request.origin) }))}
           </p>
 
           <div class="card">
@@ -1914,27 +2005,26 @@
 
           <button class="primary" type="submit">
             ${icon('draw')}
-            <span>Sign</span>
+            <span>${t('common.sign')}</span>
           </button>
 
-          ${button('ghost', 'cancel-request', 'close', 'Cancel')}
+          ${button('ghost', 'cancel-request', 'close', t('common.cancel'))}
         </form>
       `, 'draw');
     }
 
     const current = currentReceive();
 
-    return shell('Connect', `
+    return shell(t('common.connect'), `
       <form class="stack" data-action="approve-connect">
         <p>
-          ${host} wants to see your Dogecoin address and ask before each payment.
-          It cannot see your recovery phrase.
+          ${esc(t('approval.connectExplanation', { site: siteName(state.request.origin) }))}
         </p>
 
         ${addressField(current.address)}
 
         <label>
-          Wallet password
+          ${t('common.walletPassword')}
           <input
             name="password"
             type="password"
@@ -1945,10 +2035,10 @@
 
         <button class="primary" type="submit">
           ${icon('lock_open')}
-          <span>Connect</span>
+          <span>${t('common.connect')}</span>
         </button>
 
-        ${button('ghost', 'cancel-request', 'close', 'Cancel')}
+        ${button('ghost', 'cancel-request', 'close', t('common.cancel'))}
       </form>
     `, 'lock');
   }
@@ -1962,7 +2052,7 @@
 
     const named = chain
       ? chainName(chain)
-      : 'Choose a chain in the payment link';
+      : t('payment.chooseChainLink');
 
     const uri = externalPayLink();
 
@@ -1970,7 +2060,7 @@
       ? `
         <form class="stack" data-action="unlock-and-pay">
           <label>
-            Wallet password
+            ${t('common.walletPassword')}
             <input
               name="password"
               type="password"
@@ -1981,39 +2071,40 @@
 
           <button class="primary" type="submit">
             ${icon('lock_open')}
-            <span>Unlock this wallet and continue</span>
+            <span>${t('payment.unlockContinue')}</span>
           </button>
         </form>
 
         <p class="hint">
-          Creating or importing replaces the wallet in this browser.
-          The coins stay safe only if you kept the 12 words.
+          ${t('payment.replaceWarning')}
         </p>
       `
-      : '<p class="hint">This browser does not have a DogeDrop wallet yet.</p>';
+      : `<p class="hint">${t('payment.noWallet')}</p>`;
 
     const other = chain === 'dogecoinvm'
-      ? 'This opens a dogecoinvm: link for a wallet already installed on this device. DogeDrop does not sign that payment.'
-      : 'This opens a dogecoin: link for a wallet already installed on this device. DogeDrop does not sign that payment.';
+      ? t('payment.externalVm')
+      : t('payment.externalDoge');
 
-    return shell('Choose how to pay', `
+    return shell(t('payment.chooseTitle'), `
       <p>
-        ${host} is asking for a payment, and DogeDrop is not connected.
+        ${esc(t('payment.siteAsks', { site: siteName(state.request?.origin) }))}
       </p>
 
       <div class="card">
+        ${dogevmEnabled ? `
         <p>
-          Chain<br>
+          ${t('common.chain')}<br>
           <strong>${esc(named)}</strong>
         </p>
+        ` : ''}
 
         <p>
-          To<br>
+          ${t('common.to')}<br>
           <span class="num">${esc(payAddress())}</span>
         </p>
 
         <p>
-          Amount<br>
+          ${t('common.amount')}<br>
           <strong class="num">${esc(state.draft.amount)} DOGE</strong>
         </p>
       </div>
@@ -2021,8 +2112,8 @@
       <div class="stack">
         ${unlock}
 
-        ${button('ghost', 'start-create', 'add_card', 'Create a new wallet')}
-        ${button('ghost', 'start-restore', 'key', 'Import a wallet')}
+        ${button('ghost', 'start-create', 'add_card', t('welcome.create'))}
+        ${button('ghost', 'start-restore', 'key', t('payment.importWallet'))}
 
         <a
           class="ghost"
@@ -2032,14 +2123,14 @@
           data-action="pay-external"
         >
           ${icon('payments')}
-          <span>Pay with another wallet</span>
+          <span>${t('payment.otherWallet')}</span>
         </a>
 
         <p class="hint">
           ${other}
         </p>
 
-        ${button('ghost', 'cancel-request', 'close', 'Cancel')}
+        ${button('ghost', 'cancel-request', 'close', t('common.cancel'))}
       </div>
     `, 'payments');
   }

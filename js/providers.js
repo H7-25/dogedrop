@@ -13,7 +13,7 @@
     return {
       preset: 'dogechain',
       broadcast: 'same',
-      fee: 'normal',
+      fee: 'slow',
       autolockMinutes: 15,
       blockcypherToken: '',
       sochainKey: '',

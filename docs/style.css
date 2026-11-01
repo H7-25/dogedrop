@@ -1,0 +1,472 @@
+html {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100%;
+    font-family: "Inter", system-ui, sans-serif;
+    background: linear-gradient(180deg, #e8f3ff 0%, #f8fafc 38%, #eef2f6 100%);
+    color: #0f172a;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+button.primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+    font-weight: 700;
+}
+
+.mi {
+    font-family: "Material Symbols Outlined";
+    font-weight: 500;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 1;
+    letter-spacing: normal;
+    display: inline-block;
+    white-space: nowrap;
+    font-feature-settings: "liga";
+}
+
+.page {
+    box-sizing: border-box;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 18px 112px;
+}
+
+.hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.hero img {
+    width: 56px;
+    height: 56px;
+    display: block;
+    border-radius: 14px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 34px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.hero p {
+    margin: 6px 0 0;
+    color: #475569;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 18px;
+    margin-top: 16px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+}
+
+.kicker {
+    margin: 0 0 4px;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+}
+
+p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.45;
+}
+
+.hint {
+    margin-top: 10px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+#status {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+#status strong {
+    font-size: 16px;
+}
+
+#status code,
+#status span {
+    color: #475569;
+    font-size: 13px;
+}
+
+.steps {
+    list-style: none;
+    margin: 12px 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.steps li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.steps b {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #1d4ed8;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+}
+
+code,
+pre {
+    font-family: "Roboto Mono", ui-monospace, monospace;
+}
+
+code {
+    word-break: break-all;
+}
+
+pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    overflow: auto;
+    font-size: 12.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    margin: 12px 0;
+}
+
+.facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.fact {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px;
+    background: #f8fafc;
+}
+
+.fact strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.fact span {
+    color: #475569;
+    font-size: 13px;
+}
+
+a {
+    color: #1e40af;
+}
+
+.chains {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+button.chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 58px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    text-align: left;
+    width: 100%;
+    justify-content: flex-start;
+    background: #f8fafc;
+}
+
+button.chain strong {
+    display: block;
+    font-size: 14px;
+}
+
+button.chain .num {
+    display: block;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+button.chain.active {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.pay {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+input {
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    padding: 8px 12px;
+    width: 120px;
+    font-family: "Roboto Mono", ui-monospace, monospace;
+    font-size: 16px;
+}
+
+#result {
+    margin-top: 10px;
+}
+
+.site-foot {
+    margin-top: 28px;
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.site-foot a {
+    color: #1e40af;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+a.github {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #0f172a;
+    color: #fff;
+}
+
+a.github svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.caution {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483646;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.caution[hidden] {
+    display: none;
+}
+
+.caution-card {
+    width: min(420px, 100%);
+    background: #fff;
+    border-radius: 20px;
+    padding: 22px 18px;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2);
+}
+
+.caution-card img {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: block;
+}
+
+.caution-card h2 {
+    margin: 12px 0 8px;
+    font-size: 22px;
+}
+
+.caution-card p {
+    color: #334155;
+}
+
+.caution-card .primary {
+    width: 100%;
+    margin-top: 16px;
+}
+
+/* Wallet information */
+
+.wallet-info {
+    margin-top: 20px;
+}
+
+.wallet-info > p:not(.kicker) {
+    color: #475569;
+}
+
+.wallet-info-section {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.wallet-info-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.wallet-info-section h3 .mi {
+    color: #2563eb;
+    font-size: 21px;
+}
+
+.wallet-info-section p {
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.wallet-info-section p + p {
+    margin-top: 10px;
+}
+
+.wallet-info-warning {
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412 !important;
+    font-weight: 600;
+}
+
+.wallet-info-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.wallet-info-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 7px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #1e40af;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.wallet-info-links a:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+}
+
+/* Mobile */
+
+@media (max-width: 560px) {
+    .page {
+        padding: 20px 14px 120px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    .hero img {
+        width: 48px;
+        height: 48px;
+    }
+
+    .status-row,
+    .pay {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .status-row button,
+    .pay button,
+    .pay input {
+        width: 100%;
+    }
+
+    .facts,
+    .chains {
+        grid-template-columns: 1fr;
+    }
+
+    .wallet-info-links {
+        flex-direction: column;
+    }
+
+    .wallet-info-links a {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}

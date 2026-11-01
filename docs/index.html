@@ -4,83 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>DogeDrop</title>
-  <meta name="description" content="DogeDrop is a Dogecoin and DogecoinVM wallet. Paste one line on any website or in any app. Keys stay in the visitor's browser.">
+  <meta name="description" content="DogeDrop is a self-custodial Dogecoin and DogecoinVM wallet for IRC, social platforms, and the open web. Developed by SimosNap IRC Network.">
+
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DogeDrop">
   <meta property="og:title" content="DogeDrop">
-  <meta property="og:description" content="A Dogecoin and DogecoinVM wallet for any website or app. Keys stay in the visitor's browser.">
-  <meta property="og:url" content="https://dogedrop.org/">
-  <meta property="og:image" content="https://dogedrop.org/img/dogedrop.png">
+  <meta property="og:description" content="A self-custodial Dogecoin and DogecoinVM wallet for IRC, social platforms, and the open web. Your keys stay in your browser.">
+  <meta property="og:url" content="https://wallet.simosnap.org/">
+  <meta property="og:image" content="https://wallet.simosnap.org/img/dogedrop.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="2642">
   <meta property="og:image:height" content="1514">
-  <meta property="og:image:alt" content="DogeDrop, a Dogecoin and DogecoinVM wallet">
+  <meta property="og:image:alt" content="DogeDrop - Self-custodial Dogecoin and DogecoinVM wallet">
+
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="DogeDrop">
-  <meta name="twitter:description" content="A Dogecoin and DogecoinVM wallet for any website or app. Keys stay in the visitor's browser.">
-  <meta name="twitter:image" content="https://dogedrop.org/img/dogedrop.png">
-  <meta name="twitter:image:alt" content="DogeDrop, a Dogecoin and DogecoinVM wallet">
+  <meta name="twitter:description" content="A self-custodial Dogecoin and DogecoinVM wallet for IRC, social platforms, and the open web. Your keys stay in your browser.">
+  <meta name="twitter:image" content="https://wallet.simosnap.org/img/dogedrop.png">
+  <meta name="twitter:image:alt" content="DogeDrop - Self-custodial Dogecoin and DogecoinVM wallet">
+
   <link rel="icon" href="img/logo.png" type="image/png">
-  <style>
-    html { height: 100%; }
-    body { margin: 0; min-height: 100%; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #e8f3ff 0%, #f8fafc 38%, #eef2f6 100%); color: #0f172a; }
-    button, input { font: inherit; }
-    button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; padding: 8px 14px; cursor: pointer; }
-    button.primary { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 700; }
-    .mi { font-family: "Material Symbols Outlined"; font-weight: 500; font-style: normal; font-size: 20px; line-height: 1; letter-spacing: normal; display: inline-block; white-space: nowrap; font-feature-settings: "liga"; }
-    .page { box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 28px 18px 112px; }
-    .hero { display: flex; align-items: center; gap: 14px; }
-    .hero img { width: 56px; height: 56px; display: block; border-radius: 14px; }
-    h1 { margin: 0; font-size: 34px; letter-spacing: -0.03em; line-height: 1; }
-    .hero p { margin: 6px 0 0; color: #475569; font-size: 16px; line-height: 1.4; }
-    .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 18px; margin-top: 16px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05); }
-    .kicker { margin: 0 0 4px; color: #2563eb; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-    h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.02em; }
-    p { margin: 0; font-size: 15px; line-height: 1.45; }
-    .hint { margin-top: 10px; color: #475569; font-size: 14px; }
-    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; }
-    #status { display: grid; gap: 3px; min-width: 0; }
-    #status strong { font-size: 16px; }
-    #status code, #status span { color: #475569; font-size: 13px; }
-    .steps { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
-    .steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: center; }
-    .steps b { width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; color: #1d4ed8; display: grid; place-items: center; font-size: 13px; }
-    code, pre { font-family: "Roboto Mono", ui-monospace, monospace; }
-    code { word-break: break-all; }
-    pre { background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 12px 14px; overflow: auto; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; margin: 12px 0; }
-    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-    .fact { border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; background: #f8fafc; }
-    .fact strong { display: block; margin-bottom: 2px; }
-    .fact span { color: #475569; font-size: 13px; }
-    a { color: #1e40af; }
-    .chains { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-    button.chain { display: flex; align-items: center; gap: 8px; min-height: 58px; padding: 8px 10px; border-radius: 14px; text-align: left; width: 100%; justify-content: flex-start; background: #f8fafc; }
-    button.chain strong { display: block; font-size: 14px; }
-    button.chain .num { display: block; color: #475569; font-size: 12px; font-weight: 500; }
-    button.chain.active { border-color: #2563eb; background: #eff6ff; }
-    .pay { display: flex; gap: 8px; margin-top: 12px; }
-    input { min-height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; padding: 8px 12px; width: 120px; font-family: "Roboto Mono", ui-monospace, monospace; font-size: 16px; }
-    #result { margin-top: 10px; }
-    .site-foot { margin-top: 28px; display: grid; justify-items: center; gap: 14px; text-align: center; color: #64748b; font-size: 14px; }
-    .site-foot a { color: #1e40af; font-weight: 700; text-decoration: none; }
-    a.github { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; background: #0f172a; color: #fff; }
-    a.github svg { width: 18px; height: 18px; display: block; }
-    .caution { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 18px; background: rgba(15, 23, 42, 0.55); }
-    .caution[hidden] { display: none; }
-    .caution-card { width: min(420px, 100%); background: #fff; border-radius: 20px; padding: 22px 18px; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2); }
-    .caution-card img { width: 56px; height: 56px; border-radius: 14px; display: block; }
-    .caution-card h2 { margin: 12px 0 8px; font-size: 22px; }
-    .caution-card p { color: #334155; }
-    .caution-card .primary { width: 100%; margin-top: 16px; }
-    @media (max-width: 560px) {
-      .page { padding: 20px 14px 120px; }
-      h1 { font-size: 28px; }
-      .hero img { width: 48px; height: 48px; }
-      .status-row, .pay { flex-direction: column; align-items: stretch; }
-      .status-row button, .pay button, .pay input { width: 100%; }
-      .facts, .chains { grid-template-columns: 1fr; }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
+  <script src="js/i18n.js" defer></script>
   <script>
     (function () {
       var src = new URL('wallet/connect.js', location.href).href;
@@ -98,9 +43,9 @@
   <div id="caution" class="caution" role="dialog" aria-modal="true" aria-labelledby="caution-title">
     <div class="caution-card">
       <img src="img/logo.png" alt="">
-      <h2 id="caution-title">Read this first</h2>
-      <p>DogeDrop has not been audited. Be careful. Test with a small amount only. A payment cannot be undone, and coins can be lost if something goes wrong.</p>
-      <button id="dismiss-caution" class="primary" type="button"><span class="mi" aria-hidden="true">check</span><span>I understand</span></button>
+      <h2 id="caution-title" data-i18n="caution.title">Read this first</h2>
+      <p data-i18n="caution.description">DogeDrop has not been audited. Be careful. Test with a small amount only. A payment cannot be undone, and coins can be lost if something goes wrong.</p>
+      <button id="dismiss-caution" class="primary" type="button"><span class="mi" aria-hidden="true">check</span><span data-i18n="caution.confirm">I understand</span></button>
     </div>
   </div>
   <main class="page">
@@ -108,178 +53,340 @@
       <img src="img/logo.png" alt="">
       <div>
         <h1>DogeDrop</h1>
-        <p>A Dogecoin wallet for any website. The keys stay in the visitor's browser.</p>
+        <p data-i18n="hero.subtitle">A self-custodial Dogecoin wallet for IRC, social platforms, and the open web</p>
       </div>
     </header>
 
+    <section class="panel wallet-info" aria-labelledby="wallet-info-title">
+      <p class="kicker" data-i18n="info.kicker">Before you begin</p>
+      <h2 id="wallet-info-title" data-i18n="info.title">Your wallet. Your keys. Your responsibility.</h2>
+
+      <p data-i18n="info.intro">
+        DogeDrop is a self-custodial wallet. Your private keys and recovery
+        phrase belong exclusively to you. They are generated and stored
+        locally in your browser, never on our servers.
+      </p>
+
+      <div class="wallet-info-section">
+        <h3>
+          <span class="mi" aria-hidden="true">key</span>
+          <span data-i18n="info.custody.title">Truly self-custodial</span>
+        </h3>
+        <p data-i18n="info.custody.description">
+          We cannot access your wallet, view your recovery phrase, recover
+          your password, or authorize transactions on your behalf.
+          Your keys remain under your control.
+        </p>
+      </div>
+
+      <div class="wallet-info-section">
+        <h3>
+          <span class="mi" aria-hidden="true">backup</span>
+          <span data-i18n="info.backup.title">Back up your recovery phrase</span>
+        </h3>
+        <p data-i18n="info.backup.description">
+          Your 12-word recovery phrase is the only reliable way to restore
+          your wallet. Write it down and keep it somewhere safe, preferably
+          offline. Never share it with anyone or enter it on an untrusted website.
+        </p>
+        <p class="wallet-info-warning" data-i18n="info.backup.warning">
+          If you lose your recovery phrase and access to your wallet,
+          nobody can recover your funds. Not even us.
+        </p>
+      </div>
+
+      <div class="wallet-info-section">
+        <h3>
+          <span class="mi" aria-hidden="true">devices</span>
+          <span data-i18n="info.storage.title">Browser storage is not permanent</span>
+        </h3>
+        <p data-i18n="info.storage.description">
+          Your encrypted wallet is stored in your browser's local storage.
+          Clearing website data, using private browsing, changing devices,
+          or browser storage cleanup may permanently remove the local copy.
+        </p>
+        <p data-i18n="info.storage.warning">
+          Your Dogecoin remains on the blockchain, but without your recovery
+          phrase you may lose access to it.
+        </p>
+      </div>
+
+      <div class="wallet-info-section">
+        <h3>
+          <span class="mi" aria-hidden="true">science</span>
+          <span data-i18n="info.metaldoge.title">MetalDoge is experimental</span>
+        </h3>
+        <p data-i18n="info.metaldoge.description">
+          DogeDrop supports Dogecoin and DogecoinVM, part of the emerging
+          MetalDoge ecosystem. DogecoinVM technology is still experimental
+          and should be considered alpha software.
+        </p>
+        <p data-i18n="info.metaldoge.warning">
+          Features, infrastructure, and network behavior may change.
+          Use small amounts and understand the risks before experimenting.
+        </p>
+      </div>
+
+      <div class="wallet-info-section">
+        <h3>
+          <span class="mi" aria-hidden="true">code</span>
+          <span data-i18n="info.opensource.title">Open technology</span>
+        </h3>
+        <p>
+          <span data-i18n="info.opensource.prefix">This wallet is based on the open-source</span>
+          <a href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">DogeDrop</a>,
+          <span data-i18n="info.opensource.author">originally developed by Paulo Vidal, and further developed by</span>
+          <a href="https://www.simosnap.org/" target="_blank" rel="noopener">SimosNap IRC Network</a>.
+        </p>
+        <p data-i18n="info.opensource.mission">
+          Our goal is to bring self-custodial Dogecoin payments to the
+          SimosNap IRC Network and Monoverse, our framework for extending
+          IRC channels with social features and web integration.
+          The wallet remains open source and available for anyone
+          who wants to integrate it into their own website or application.
+        </p>
+        <p data-i18n="info.opensource.warning">
+          The wallet has not been independently audited. Always exercise
+          caution when using experimental financial software.
+        </p>
+      </div>
+
+      <div class="wallet-info-links">
+        <a href="https://dogecoin.com/dogepedia/articles/what-is-dogecoin/"
+           target="_blank" rel="noopener" data-i18n="info.links.whatIsDogecoin">
+          What is Dogecoin?
+        </a>
+
+        <a href="https://github.com/qlpqlp/dogedrop"
+           target="_blank" rel="noopener" data-i18n="info.links.project">
+          DogeDrop Project
+        </a>
+
+        <a href="https://metaldoge.com/"
+           target="_blank" rel="noopener" data-i18n="info.links.metaldoge">
+          Explore MetalDoge
+        </a>
+      </div>
+    </section>
+
     <section class="panel" aria-labelledby="here-title">
-      <p class="kicker">This page</p>
-      <h2 id="here-title">Try the button</h2>
-      <p>Connect shares the address with this page. Every payment still asks first.</p>
-      <div class="status-row">
-        <p id="status">Looking for the wallet…</p>
-        <button id="connect" class="primary" type="button"><span class="mi" aria-hidden="true">link</span><span>Connect</span></button>
-      </div>
-    </section>
+        <p class="kicker" data-i18n="connect.kicker">This page</p>
+        <h2 id="here-title" data-i18n="connect.title">Try the button</h2>
+        <p data-i18n="connect.description">Connect shares the address with this page. Every payment still asks first.</p>
+        <div class="status-row">
+          <p id="status" data-i18n="connect.status.loading">Looking for the wallet…</p>
+          <button id="connect" class="primary" type="button"><span class="mi" aria-hidden="true">link</span><span data-i18n="connect.button.connect">Connect</span></button>
+        </div>
+      </section>
 
-    <section class="panel" aria-labelledby="add-title">
-      <p class="kicker">For a website</p>
-      <h2 id="add-title">Paste one line</h2>
-      <ol class="steps">
-        <li><b>1</b><span>Add the line before the end of the page.</span></li>
-        <li><b>2</b><span>A wallet button appears for the visitor.</span></li>
-        <li><b>3</b><span>Your site asks. The visitor approves.</span></li>
-      </ol>
-      <pre id="snippet"></pre>
-      <button id="copy-snippet" class="primary" type="button"><span class="mi" aria-hidden="true">content_copy</span><span>Copy snippet</span></button>
-      <p id="snippet-note" class="hint"></p>
-    </section>
+      <section class="panel" aria-labelledby="add-title">
+        <p class="kicker" data-i18n="integration.kicker">For a website</p>
+        <h2 id="add-title" data-i18n="integration.title">Paste one line</h2>
+        <ol class="steps">
+          <li><b>1</b><span data-i18n="integration.step1">Add the line before the end of the page.</span></li>
+          <li><b>2</b><span data-i18n="integration.step2">A wallet button appears for the visitor.</span></li>
+          <li><b>3</b><span data-i18n="integration.step3">Your site asks. The visitor approves.</span></li>
+        </ol>
+        <pre id="snippet"></pre>
+        <button id="copy-snippet" class="primary" type="button"><span class="mi" aria-hidden="true">content_copy</span><span data-i18n="integration.copy">Copy snippet</span></button>
+        <p id="snippet-note" class="hint" data-i18n="integration.snippetNote">The wallet loads from dogedrop.org/wallet, so another site cannot read the keys. This guide is on the same address, and the wallet says so.</p>
 
-    <section class="panel" aria-labelledby="pay-title">
-      <p class="kicker">Payments</p>
-      <h2 id="pay-title">Same address, two chains</h2>
-      <div class="facts">
-        <div class="fact"><strong>Dogecoin</strong><span>Usually confirms in 1 to 10 minutes.</span></div>
-        <div class="fact"><strong>DogecoinVM</strong><span>Final in about a fifth of a second.</span></div>
-      </div>
-      <p class="hint">The address looks the same. The coins are separate. <a href="https://metaldoge.com/" target="_blank" rel="noopener">What DogecoinVM is</a></p>
-      <pre>const linked = await doge.connect();
-const sent = await doge.requestTransaction({
-  recipientAddress: 'dogecoinvm:D...?amount=1.5'
-});</pre>
-      <p class="hint"><code>dogecoin:</code> pays Dogecoin. <code>dogecoinvm:</code> pays DogecoinVM.</p>
-    </section>
+        <div class="wallet-info-section">
+          <h3>
+            <span class="mi" aria-hidden="true">code</span>
+            <span data-i18n="integration.fork.title">Prefer our fork?</span>
+          </h3>
+          <p data-i18n="integration.fork.description">
+            You can also integrate the SimosNap fork of DogeDrop into your website.
+            It is based on the original open-source project and developed
+            for the SimosNap IRC Network and Monoverse.
+          </p>
+          <pre>&lt;script src="https://wallet.simosnap.org/wallet/connect.js" data-label="DogeWallet"&gt;&lt;/script&gt;</pre>
+        </div>
 
-    <section class="panel" aria-labelledby="tip-title">
-      <p class="kicker">Demo</p>
-      <h2 id="tip-title">Send a test tip</h2>
-      <p>This sends to <code>DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n</code>.</p>
-      <div class="chains" id="tip-chains">
-        <button type="button" class="chain active" data-chain="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong>Dogecoin</strong><span class="num">1 to 10 minutes</span></span></button>
-        <button type="button" class="chain" data-chain="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong>DogecoinVM</strong><span class="num">About 0.2 seconds</span></span></button>
-      </div>
-      <p id="tip-time" class="hint">A Dogecoin confirmation usually takes 1 to 10 minutes.</p>
-      <div class="pay">
-        <input id="amount" data-amount="1" inputmode="decimal" value="1" aria-label="Amount in DOGE">
-        <button id="tip" class="primary" type="button"><span class="mi" aria-hidden="true">send</span><span>Send on Dogecoin</span></button>
-      </div>
-      <p id="result"></p>
-    </section>
+        <div class="wallet-info-section">
+          <h3>
+            <span class="mi" aria-hidden="true">code</span>
+            <span data-i18n="integration.docs.title">Developer documentation</span>
+          </h3>
+          <p data-i18n="integration.docs.description">
+            Want to build your own integration?
+            Explore the DogeDrop JavaScript API to connect wallets,
+            request payments, and integrate Dogecoin functionality
+            into your website, application, or IRC client.
+          </p>
+          <p>
+            <a href="developers.html" data-i18n="integration.docs.link">
+              View API documentation &rarr;
+            </a>
+          </p>
+        </div>
+      </section>
 
-    <footer class="site-foot">
-      <p>The wallet by itself is at <a href="wallet/">dogedrop.org/wallet</a>.</p>
-      <a class="github" href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-        <span>Open source on GitHub</span>
-      </a>
-    </footer>
+      <section class="panel" aria-labelledby="pay-title">
+        <p class="kicker" data-i18n="payments.kicker">Payments</p>
+        <h2 id="pay-title" data-i18n="payments.title">Same address, two chains</h2>
+        <div class="facts">
+          <div class="fact"><strong>Dogecoin</strong><span data-i18n="payments.dogecoin.time">Usually confirms in 1 to 10 minutes.</span></div>
+          <div class="fact"><strong>DogecoinVM</strong><span data-i18n="payments.vm.time">Final in about a fifth of a second.</span></div>
+        </div>
+        <p class="hint">
+          <span data-i18n="payments.warning">The address looks the same. The coins are separate.</span>
+          <a href="https://metaldoge.com/" target="_blank" rel="noopener" data-i18n="payments.vm.link">What DogecoinVM is</a>
+        </p>
+        <pre>const linked = await doge.connect();
+  const sent = await doge.requestTransaction({
+    recipientAddress: 'dogecoinvm:D...?amount=1.5'
+  });</pre>
+        <p class="hint">
+          <code>dogecoin:</code> <span data-i18n="payments.scheme.dogecoin">pays Dogecoin.</span>
+          <code>dogecoinvm:</code> <span data-i18n="payments.scheme.vm">pays DogecoinVM.</span>
+        </p>
+      </section>
+
+      <section class="panel" aria-labelledby="tip-title">
+        <p class="kicker" data-i18n="demo.kicker">Demo</p>
+        <h2 id="tip-title" data-i18n="demo.title">Send a test tip</h2>
+        <p><span data-i18n="demo.description">This sends to</span> <code>DQ1zbh86aKpwuHT5gcEtbayi1p8b6xuT2F</code>.</p>
+        <div class="chains" id="tip-chains">
+          <button type="button" class="chain active" data-chain="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong>Dogecoin</strong><span class="num" data-i18n="demo.dogecoin.timeShort">1 to 10 minutes</span></span></button>
+          <button type="button" class="chain" data-chain="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong>DogecoinVM</strong><span class="num" data-i18n="demo.vm.timeShort">About 0.2 seconds</span></span></button>
+        </div>
+        <p id="tip-time" class="hint" data-i18n="demo.dogecoin.time">A Dogecoin confirmation usually takes 1 to 10 minutes.</p>
+        <div class="pay">
+          <input id="amount" data-amount="1" inputmode="decimal" value="1" aria-label="Amount in DOGE">
+          <button id="tip" class="primary" type="button"><span class="mi" aria-hidden="true">send</span><span data-i18n="demo.send.dogecoin">Send on Dogecoin</span></button>
+        </div>
+        <p id="result"></p>
+      </section>
+
+      <footer class="site-foot">
+        <p>
+          <span data-i18n="footer.openWallet">Open your wallet at</span>
+          <a href="wallet/">wallet.simosnap.org/wallet</a>.
+        </p>
+        <p>
+          <span data-i18n="footer.developedBy">Developed by</span>
+          <a href="https://www.simosnap.org/" target="_blank" rel="noopener">SimosNap IRC Network</a>
+          · <span data-i18n="footer.basedOn">Based on</span>
+          <a href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">DogeDrop</a>
+        </p>
+        <a class="github" href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span data-i18n="footer.github">Open source on GitHub</span>
+        </a>
+      </footer>
   </main>
   <script>
-    const tipTo = 'DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n';
+    const tipTo = 'DQ1zbh86aKpwuHT5gcEtbayi1p8b6xuT2F';
 
-    function setLabeled(id, glyph, label) {
-      const button = document.getElementById(id);
-      button.innerHTML = '<span class="mi" aria-hidden="true">' + glyph + '</span><span>' + label + '</span>';
+  function setLabeled(id, glyph, label) {
+    const button = document.getElementById(id);
+    button.innerHTML = '<span class="mi" aria-hidden="true">' + glyph + '</span><span>' + label + '</span>';
+  }
+
+  const status = document.getElementById('status');
+  const result = document.getElementById('result');
+  const walletHost = 'https://dogedrop.org/wallet/';
+  const snippet = '<script src="' + walletHost + 'connect.js" data-label="DogeWallet"><' + '/script>';
+  document.getElementById('snippet').textContent = snippet;
+
+  const caution = document.getElementById('caution');
+  try { if (localStorage.getItem('dogedrop.caution.demo.v1') === '1') caution.hidden = true; } catch { /* Show the warning when storage is blocked. */ }
+  document.getElementById('dismiss-caution').addEventListener('click', () => {
+    try { localStorage.setItem('dogedrop.caution.demo.v1', '1'); } catch { /* Closed for this visit only. */ }
+    caution.hidden = true;
+  });
+
+  async function showStatus() {
+    await window.i18nReady;
+    const connection = await window.doge.getConnectionStatus();
+    if (!connection.connected) {
+      status.textContent = t('connect.status.disconnected');
+      setLabeled('connect', 'link', t('connect.button.connect'));
+      return;
     }
-    const status = document.getElementById('status');
-    const result = document.getElementById('result');
-    const walletHost = 'https://dogedrop.org/wallet/';
-    const snippet = '<script src="' + walletHost + 'connect.js" data-label="DogeWallet"><' + '/script>';
-    document.getElementById('snippet').textContent = snippet;
-    document.getElementById('snippet-note').textContent = 'The wallet loads from dogedrop.org/wallet, so another site cannot read the keys. This guide is on the same address, and the wallet says so.';
+    const balance = await window.doge.getBalance();
+    const vmLine = balance.balanceVmDoge == null
+      ? t('connect.status.vmNotLoaded')
+      : 'DogecoinVM ' + balance.balanceVmDoge + ' DOGE';
+    status.innerHTML = '<strong>' + t('connect.status.connected') + '</strong><code>' + connection.address + '</code><span>Dogecoin ' + balance.balanceDoge + ' DOGE</span><span>' + vmLine + '</span>';
+    setLabeled('connect', 'close', t('connect.button.disconnect'));
+  }
 
-    const caution = document.getElementById('caution');
-    try { if (localStorage.getItem('dogedrop.caution.demo.v1') === '1') caution.hidden = true; } catch { /* Show the warning when storage is blocked. */ }
-    document.getElementById('dismiss-caution').addEventListener('click', () => {
-      try { localStorage.setItem('dogedrop.caution.demo.v1', '1'); } catch { /* Closed for this visit only. */ }
-      caution.hidden = true;
-    });
+  document.getElementById('amount').addEventListener('input', (event) => {
+    const field = event.target;
+    const cleaned = field.value.replace(/[^\d.]/g, '');
+    const parts = cleaned.split('.');
+    field.value = parts.length < 2 ? parts[0] : parts[0] + '.' + parts.slice(1).join('').slice(0, 8);
+  });
 
-    async function showStatus() {
+  window.addEventListener('doge#initialized', () => { showStatus().catch((error) => { status.textContent = error.message; }); });
+  if (window.doge) {
+    window.doge.on('connect', () => { showStatus().catch(() => {}); });
+    window.doge.on('disconnect', () => { showStatus().catch(() => {}); });
+  }
+
+  document.getElementById('copy-snippet').addEventListener('click', async () => {
+    await window.i18nReady;
+    try {
+      await navigator.clipboard.writeText(snippet);
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = snippet;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand('copy');
+      area.remove();
+    }
+    setLabeled('copy-snippet', 'check', t('integration.copied'));
+    setTimeout(() => { setLabeled('copy-snippet', 'content_copy', t('integration.copy')); }, 1500);
+  });
+
+  document.getElementById('connect').addEventListener('click', async () => {
+    try {
       const connection = await window.doge.getConnectionStatus();
-      if (!connection.connected) {
-        status.textContent = 'Not connected to this page.';
-        setLabeled('connect', 'link', 'Connect');
-        return;
-      }
-      const balance = await window.doge.getBalance();
-      const vmLine = balance.balanceVmDoge == null ? 'DogecoinVM balance not loaded yet' : ('DogecoinVM ' + balance.balanceVmDoge + ' DOGE');
-      status.innerHTML = '<strong>Connected</strong><code>' + connection.address + '</code><span>Dogecoin ' + balance.balanceDoge + ' DOGE</span><span>' + vmLine + '</span>';
-      setLabeled('connect', 'close', 'Disconnect');
+      if (connection.connected) await window.doge.disconnect();
+      else await window.doge.connect();
+      await showStatus();
+    } catch (error) {
+      status.textContent = error.message;
     }
+  });
 
-    document.getElementById('amount').addEventListener('input', (event) => {
-      const field = event.target;
-      const cleaned = field.value.replace(/[^\d.]/g, '');
-      const parts = cleaned.split('.');
-      field.value = parts.length < 2 ? parts[0] : parts[0] + '.' + parts.slice(1).join('').slice(0, 8);
-    });
+  function selectedChain() {
+    const active = document.querySelector('#tip-chains .chain.active');
+    return active && active.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+  }
 
-    window.addEventListener('doge#initialized', () => { showStatus().catch((error) => { status.textContent = error.message; }); });
-    if (window.doge) {
-      window.doge.on('connect', () => { showStatus().catch(() => {}); });
-      window.doge.on('disconnect', () => { showStatus().catch(() => {}); });
+  document.getElementById('tip-chains').addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-chain]');
+    if (!button) return;
+    await window.i18nReady;
+    document.querySelectorAll('#tip-chains .chain').forEach((item) => item.classList.toggle('active', item === button));
+    const vm = button.dataset.chain === 'dogecoinvm';
+    document.getElementById('tip-time').textContent = t(vm ? 'demo.vm.time' : 'demo.dogecoin.time');
+    setLabeled('tip', 'send', t(vm ? 'demo.send.vm' : 'demo.send.dogecoin'));
+  });
+
+  document.getElementById('tip').addEventListener('click', async () => {
+    await window.i18nReady;
+    const chain = selectedChain();
+    const amount = document.getElementById('amount').value;
+    const request = chain + ':' + tipTo + '?amount=' + encodeURIComponent(amount);
+    result.textContent = t('demo.waiting');
+    try {
+      const sent = await window.doge.requestTransaction({ recipientAddress: request });
+      const href = chain === 'dogecoinvm'
+        ? 'https://metaldoge.com/api/tx/' + sent.txid
+        : 'https://dogechain.com/tx/' + sent.txid;
+      const name = chain === 'dogecoinvm' ? 'DogecoinVM' : 'Dogecoin';
+      result.innerHTML = t('demo.sent', { network: name }) + ' <a href="' + href + '" target="_blank" rel="noopener">' + t('demo.viewPayment') + '</a>';
+      await showStatus();
+    } catch (error) {
+      result.textContent = error.message;
     }
-
-    document.getElementById('copy-snippet').addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(snippet);
-      } catch {
-        const area = document.createElement('textarea');
-        area.value = snippet;
-        document.body.appendChild(area);
-        area.select();
-        document.execCommand('copy');
-        area.remove();
-      }
-      setLabeled('copy-snippet', 'check', 'Copied');
-      setTimeout(() => { setLabeled('copy-snippet', 'content_copy', 'Copy snippet'); }, 1500);
-    });
-
-    document.getElementById('connect').addEventListener('click', async () => {
-      try {
-        const connection = await window.doge.getConnectionStatus();
-        if (connection.connected) await window.doge.disconnect();
-        else await window.doge.connect();
-        await showStatus();
-      } catch (error) {
-        status.textContent = error.message;
-      }
-    });
-
-    function selectedChain() {
-      const active = document.querySelector('#tip-chains .chain.active');
-      return active && active.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
-    }
-
-    document.getElementById('tip-chains').addEventListener('click', (event) => {
-      const button = event.target.closest('[data-chain]');
-      if (!button) return;
-      document.querySelectorAll('#tip-chains .chain').forEach((item) => item.classList.toggle('active', item === button));
-      const vm = button.dataset.chain === 'dogecoinvm';
-      document.getElementById('tip-time').textContent = vm
-        ? 'A DogecoinVM payment is final in about a fifth of a second.'
-        : 'A Dogecoin confirmation usually takes 1 to 10 minutes.';
-      setLabeled('tip', 'send', vm ? 'Send on DogecoinVM' : 'Send on Dogecoin');
-    });
-
-    document.getElementById('tip').addEventListener('click', async () => {
-      const chain = selectedChain();
-      const amount = document.getElementById('amount').value;
-      const request = chain + ':' + tipTo + '?amount=' + encodeURIComponent(amount);
-      result.textContent = 'Waiting for you to approve the payment…';
-      try {
-        const sent = await window.doge.requestTransaction({ recipientAddress: request });
-        const href = chain === 'dogecoinvm'
-          ? 'https://metaldoge.com/api/tx/' + sent.txid
-          : 'https://dogechain.com/tx/' + sent.txid;
-        const name = chain === 'dogecoinvm' ? 'DogecoinVM' : 'Dogecoin';
-        result.innerHTML = 'Sent on ' + name + '. <a href="' + href + '" target="_blank" rel="noopener">View payment</a>';
-        await showStatus();
-      } catch (error) {
-        result.textContent = error.message;
-      }
-    });
+  });
   </script>
 </body>
 </html>
