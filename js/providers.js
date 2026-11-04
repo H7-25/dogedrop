@@ -14,7 +14,9 @@
       preset: 'dogechain',
       broadcast: 'same',
       fee: 'normal',
-      autolockMinutes: 15,
+      autolockSeconds: 60,
+      enableDogecoin: true,
+      enableDogecoinvm: true,
       blockcypherToken: '',
       sochainKey: '',
       coreUrl: '',
@@ -62,6 +64,8 @@
       inspect: (addresses) => vmInspect(explorer, addresses),
       history: (addresses) => vmHistory(explorer, addresses),
       broadcast: (raw) => vmBroadcast(send, raw),
+      bridgeInfo: () => vmBridgeInfo(explorer),
+      depositAddress: (address) => vmDepositAddress(explorer, address),
       verifyInputs: async () => {},
       test: async () => {
         const lookup = await vmTest(explorer, 'explorer');
@@ -499,7 +503,15 @@
     return body.result;
   }
 
+  function refuseKeyMaterial(body) {
+    const text = typeof body === 'string' ? body : '';
+    if (/\b(xprv|mnemonic|privateKey|recovery phrase)\b|"wif"\s*:/i.test(text)) {
+      throw new Error('Keys stay in this browser. Nothing was sent.');
+    }
+  }
+
   async function getJson(url, options = {}, timeout = 20000, extraHeaders) {
+    refuseKeyMaterial(options.body);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
@@ -523,6 +535,7 @@
   }
 
   async function getText(url, options = {}, timeout = 20000) {
+    refuseKeyMaterial(options.body);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
@@ -668,6 +681,39 @@
     const txid = body.txid || body.txId;
     if (!/^[0-9a-fA-F]{64}$/.test(String(txid || ''))) throw new Error('The DogecoinVM send address did not accept the payment.');
     return txid;
+  }
+
+  async function vmBridgeInfo(base) {
+    let info;
+    let status;
+    try {
+      [info, status] = await Promise.all([
+        vmCall(`${base}/api/info`, undefined, 'explorer'),
+        vmCall(`${base}/api/status`, undefined, 'explorer'),
+      ]);
+    } catch (error) {
+      if (/not found/i.test(error.message || '')) throw new Error('This explorer does not offer the bridge yet. Nothing was sent.');
+      throw error;
+    }
+    if (info.chainID !== window.DogeChain.DOGECOINVM_CHAIN_ID || info.dogecoinvmNetwork !== 'dogecoinvm' || info.dogecoinNetwork !== 'mainnet') {
+      throw new Error('This is not the DogecoinVM bridge. Nothing was prepared.');
+    }
+    if (status.paused) throw new Error('The bridge is paused. Nothing was sent.');
+    if (!status.audit || status.audit.solvent !== true) throw new Error('The bridge is not balanced. Nothing was sent.');
+    return { info, status };
+  }
+
+  async function vmDepositAddress(base, address) {
+    try {
+      return await vmCall(`${base}/api/deposit-address`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address }),
+      }, 'explorer');
+    } catch (error) {
+      if (/not found/i.test(error.message || '')) throw new Error('This explorer does not offer the bridge yet. Nothing was sent.');
+      throw error;
+    }
   }
 
   async function vmTest(base, kind) {

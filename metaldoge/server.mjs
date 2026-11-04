@@ -84,6 +84,14 @@ function readBody(request) {
 function route(method, path) {
   if (method === 'GET' && path === '/healthz') return { name: 'health' };
   if (method === 'GET' && path === '/api/info') return { name: 'info', upstream: '/api/info' };
+  if (method === 'GET' && path === '/api/status') return { name: 'status', upstream: '/api/status' };
+  if (method === 'POST' && path === '/api/deposit-address') return { name: 'deposit', upstream: '/api/deposit-address' };
+  const deposits = path.match(/^\/api\/deposits\/([^/]+)$/);
+  if (method === 'GET' && deposits && ADDRESS.test(decodeURIComponent(deposits[1]))) {
+    return { name: 'deposits', upstream: `/api/deposits/${encodeURIComponent(decodeURIComponent(deposits[1]))}` };
+  }
+  const pegout = path.match(/^\/api\/pegout\/([^/]+)$/);
+  if (method === 'GET' && pegout && HEX64.test(pegout[1])) return { name: 'pegout', upstream: `/api/pegout/${pegout[1]}` };
   const address = path.match(/^\/api\/address\/([^/]+)$/);
   if (method === 'GET' && address && ADDRESS.test(decodeURIComponent(address[1]))) {
     return { name: 'address', upstream: `/api/address/${encodeURIComponent(decodeURIComponent(address[1]))}` };
@@ -141,6 +149,20 @@ const server = http.createServer(async (request, response) => {
     return;
   }
   let body;
+  if (match.name === 'deposit') {
+    try {
+      const parsed = JSON.parse(await readBody(request));
+      const address = String(parsed.address || '').trim();
+      if (!ADDRESS.test(address)) {
+        writeJson(response, 400, { error: 'Enter a Dogecoin address that starts with D.' }, origin);
+        return;
+      }
+      body = JSON.stringify({ address });
+    } catch {
+      writeJson(response, 400, { error: 'The deposit request is not valid.' }, origin);
+      return;
+    }
+  }
   if (match.name === 'send') {
     try {
       const parsed = JSON.parse(await readBody(request));

@@ -4,12 +4,15 @@ import * as secp from '@noble/secp256k1';
 import { HDKey } from '@scure/bip32';
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
-import { hex } from '@scure/base';
+import { base58check, hex } from '@scure/base';
+import { ripemd160 } from '@noble/hashes/legacy.js';
 import { Address, p2pkh, Transaction, WIF } from '@scure/btc-signer';
 import { qrcode } from 'qrcode-generator';
 
 secp.hashes.sha256 = sha256;
 secp.hashes.hmacSha256 = (key, message) => hmac(sha256, key, message);
+
+export const DOGECOINVM_CHAIN_ID = '2hFCfzdMmfXBxYgvvdL7BYiJAxdejyn4AksMYUM2eM5gN7Xrjy';
 
 export const DOGE = Object.freeze({
   bech32: 'doge',
@@ -102,6 +105,73 @@ export function isAddress(address) {
   }
 }
 
+export function bridgeDepositScript(address, signers) {
+  const decoded = Address(DOGE).decode(String(address || '').trim());
+  const type = decoded?.type === 'pkh' ? 0x00 : decoded?.type === 'sh' ? 0x01 : null;
+  if (type == null || decoded.hash?.length !== 20) throw new Error('That address cannot receive a bridge credit.');
+  const pubs = (signers?.publicKeys || []).map((item) => {
+    const bytes = hex.decode(String(item || '').trim());
+    if (bytes.length !== 33 || (bytes[0] !== 2 && bytes[0] !== 3)) throw new Error('A bridge signer key is not valid.');
+    return bytes;
+  });
+  const required = Number(signers?.required);
+  if (!Number.isInteger(required) || required < 1 || required > pubs.length || pubs.length < 1 || pubs.length > 15) {
+    throw new Error('The bridge signer set is not valid.');
+  }
+  const marked = new Uint8Array(21);
+  marked[0] = type;
+  marked.set(decoded.hash, 1);
+  const parts = [new Uint8Array([marked.length]), marked, new Uint8Array([0x75, 0x50 + required])];
+  for (const pub of pubs) parts.push(new Uint8Array([pub.length]), pub);
+  parts.push(new Uint8Array([0x50 + pubs.length, 0xae]));
+  return concat(...parts);
+}
+
+export function bridgeDepositAddress(address, signers) {
+  return p2shAddress(bridgeDepositScript(address, signers));
+}
+
+export function checkBridgeDeposit({ address, signers, depositAddress, redeemScript }) {
+  const built = bridgeDepositScript(address, signers);
+  const given = hex.decode(String(redeemScript || ''));
+  if (!sameBytes(built, given)) throw new Error('The deposit address does not match this wallet. Nothing was prepared.');
+  const derived = p2shAddress(built);
+  if (derived !== String(depositAddress || '').trim()) throw new Error('The deposit address does not match its script. Nothing was prepared.');
+  return derived;
+}
+
+export function bridgeWithdrawTag(address) {
+  const decoded = Address(DOGE).decode(String(address || '').trim());
+  if (decoded?.type !== 'pkh' || decoded.hash?.length !== 20) throw new Error('Enter a Dogecoin address that starts with D.');
+  const script = new Uint8Array(27);
+  script[0] = 0x6a;
+  script[1] = 0x19;
+  script.set(new TextEncoder().encode('DVMO'), 2);
+  script[6] = 0x00;
+  script.set(decoded.hash, 7);
+  return hex.encode(script);
+}
+
+export function addressFromBridgeTag(scriptHex) {
+  const script = hex.decode(String(scriptHex || ''));
+  const tag = script.length === 27 ? new TextDecoder().decode(script.subarray(2, 6)) : '';
+  if (script[0] !== 0x6a || script[1] !== 0x19 || tag !== 'DVMO' || script[6] !== 0x00) {
+    throw new Error('The withdrawal tag does not name a Dogecoin address.');
+  }
+  return base58check(sha256).encode(concat(new Uint8Array([DOGE.pubKeyHash]), script.subarray(7)));
+}
+
+function p2shAddress(script) {
+  return base58check(sha256).encode(concat(new Uint8Array([DOGE.scriptHash]), ripemd160(sha256(script))));
+}
+
+function sameBytes(left, right) {
+  if (left.length !== right.length) return false;
+  let diff = 0;
+  for (let i = 0; i < left.length; i += 1) diff |= left[i] ^ right[i];
+  return diff === 0;
+}
+
 export function scriptForAddress(address) {
   const decoded = Address(DOGE).decode(String(address || '').trim());
   if (!decoded || decoded.type !== 'pkh' || decoded.hash?.length !== 20) {
@@ -172,7 +242,10 @@ export function selectAll(utxos, koinuPerByte) {
 }
 
 export function signPayment({ inputs, outputs, privateKeys }) {
-  const tx = new Transaction({ allowLegacyWitnessUtxo: true });
+  const tx = new Transaction({
+    allowLegacyWitnessUtxo: true,
+    allowUnknownOutputs: outputs.some((output) => output.script),
+  });
   inputs.forEach((input) => {
     tx.addInput({
       txid: hex.decode(input.txid),
@@ -185,6 +258,11 @@ export function signPayment({ inputs, outputs, privateKeys }) {
     });
   });
   outputs.forEach((output) => {
+    if (output.script) {
+      if (output.value !== 0n) throw new Error('A message output must be worth zero.');
+      tx.addOutput({ script: hex.decode(output.script), amount: 0n });
+      return;
+    }
     if (output.value <= 0n) throw new Error('A payment output must be greater than zero.');
     tx.addOutputAddress(output.address, output.value, DOGE);
   });

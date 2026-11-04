@@ -4,38 +4,71 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>DogeDrop</title>
-  <meta name="description" content="DogeDrop is a Dogecoin and DogecoinVM wallet. Paste one line on any website or in any app. Keys stay in the visitor's browser.">
+  <meta name="description" content="Drop Dogecoin into anything">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DogeDrop">
   <meta property="og:title" content="DogeDrop">
-  <meta property="og:description" content="A Dogecoin and DogecoinVM wallet for any website or app. Keys stay in the visitor's browser.">
+  <meta property="og:description" content="Drop Dogecoin into anything">
   <meta property="og:url" content="https://dogedrop.org/">
   <meta property="og:image" content="https://dogedrop.org/img/dogedrop.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="2642">
   <meta property="og:image:height" content="1514">
-  <meta property="og:image:alt" content="DogeDrop, a Dogecoin and DogecoinVM wallet">
+  <meta property="og:image:alt" content="DogeDrop. Drop Dogecoin into anything">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="DogeDrop">
-  <meta name="twitter:description" content="A Dogecoin and DogecoinVM wallet for any website or app. Keys stay in the visitor's browser.">
+  <meta name="twitter:description" content="Drop Dogecoin into anything">
   <meta name="twitter:image" content="https://dogedrop.org/img/dogedrop.png">
-  <meta name="twitter:image:alt" content="DogeDrop, a Dogecoin and DogecoinVM wallet">
+  <meta name="twitter:image:alt" content="DogeDrop. Drop Dogecoin into anything">
   <link rel="icon" href="img/logo.png" type="image/png">
+  <script src="wallet/js/theme.js"></script>
   <style>
-    html { height: 100%; }
-    body { margin: 0; min-height: 100%; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #e8f3ff 0%, #f8fafc 38%, #eef2f6 100%); color: #0f172a; }
+    html { height: 100%; background-color: #eef2f6; background-image: linear-gradient(180deg, #e8f3ff 0%, #f8fafc 38%, #eef2f6 100%); background-attachment: fixed; }
+    body { margin: 0; min-height: 100%; font-family: "Inter", system-ui, sans-serif; background: transparent; color: #0f172a; }
     button, input { font: inherit; }
     button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; padding: 8px 14px; cursor: pointer; }
     button.primary { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 700; }
     .mi { font-family: "Material Symbols Outlined"; font-weight: 500; font-style: normal; font-size: 20px; line-height: 1; letter-spacing: normal; display: inline-block; white-space: nowrap; font-feature-settings: "liga"; }
     .page { box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 28px 18px 112px; }
-    .hero { display: flex; align-items: center; gap: 14px; }
-    .hero img { width: 56px; height: 56px; display: block; border-radius: 14px; }
+    .hero { display: flex; align-items: flex-start; gap: 14px; }
+    .hero-copy { flex: 1; min-width: 0; }
+    .hero img { width: 56px; height: 56px; display: block; border-radius: 14px; flex: none; }
     h1 { margin: 0; font-size: 34px; letter-spacing: -0.03em; line-height: 1; }
     .hero p { margin: 6px 0 0; color: #475569; font-size: 16px; line-height: 1.4; }
+    .hero-tiny { margin: 0 0 10px; color: #475569; font-size: 13px; font-weight: 500; line-height: 1.35; }
+    .hero-tools { display: flex; align-items: flex-start; gap: 8px; flex: none; }
+    .theme-btn { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 999px; font-size: 18px; line-height: 1; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08); }
+    .lang-pick { position: relative; flex: none; }
+    .lang-btn { min-height: 44px; padding: 4px 12px 4px 4px; border-radius: 999px; background: #fff; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08); gap: 8px; font-weight: 700; }
+    .lang-btn .short { min-width: 36px; height: 36px; padding: 0 8px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; display: grid; place-items: center; font-size: 12px; }
+    .lang-btn .caret { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid #64748b; }
+    .lang-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(280px, calc(100vw - 36px)); background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14); padding: 6px; display: grid; gap: 2px; }
+    .lang-pop[hidden] { display: none; }
+    .lang-pop button { width: 100%; justify-content: flex-start; border: 0; background: transparent; border-radius: 12px; min-height: 44px; font-weight: 700; gap: 10px; }
+    .lang-pop button .short { min-width: 36px; height: 28px; padding: 0 8px; border-radius: 999px; background: #f1f5f9; color: #334155; display: grid; place-items: center; font-size: 12px; }
+    .lang-pop button.on { background: #eff6ff; color: #1d4ed8; }
+    .lang-pop button.on .short { background: #dbeafe; color: #1d4ed8; }
+    .lang-pop button .mi { margin-left: auto; color: #2563eb; }
+    .wizard-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .wiz-count { margin: 0; color: #64748b; font-size: 13px; font-weight: 700; }
+    .wiz-bar { height: 4px; background: #e2e8f0; border-radius: 999px; margin: 10px 0 16px; overflow: hidden; }
+    .wiz-bar span { display: block; height: 100%; width: 0; background: #2563eb; }
+    .wiz-step[hidden] { display: none; }
+    .choices { display: grid; gap: 10px; margin-top: 14px; }
+    button.path { width: 100%; text-align: left; justify-content: flex-start; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; background: #fff; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05); }
+    button.path .mi { width: 36px; height: 36px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: grid; place-items: center; flex: none; }
+    button.path strong { display: block; font-size: 15px; }
+    button.path .num { display: block; color: #475569; font-size: 13px; font-weight: 500; line-height: 1.35; margin-top: 2px; }
+    button.path:hover { border-color: #93c5fd; }
+    .wiz-nav { display: flex; gap: 8px; margin-top: 16px; }
+    .wiz-nav[hidden] { display: none; }
+    .wiz-nav button { flex: 1; }
+    a.metal { display: inline-flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px; font-weight: 700; text-decoration: none; }
+    a.metal img { width: 20px; height: 20px; border-radius: 6px; display: block; }
     .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 18px; margin-top: 16px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05); }
     .kicker { margin: 0 0 4px; color: #2563eb; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
     h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.02em; }
+    h2.again { margin-top: 22px; }
     p { margin: 0; font-size: 15px; line-height: 1.45; }
     .hint { margin-top: 10px; color: #475569; font-size: 14px; }
     .status-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; }
@@ -45,6 +78,11 @@
     .steps { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
     .steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: center; }
     .steps b { width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; color: #1d4ed8; display: grid; place-items: center; font-size: 13px; }
+    .flow { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .flow li { display: grid; gap: 8px; align-content: start; margin: 0; padding: 12px; border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc; }
+    .flow .mi { width: 32px; height: 32px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: grid; place-items: center; font-size: 18px; }
+    .flow b { display: block; margin-bottom: 2px; font-size: 11px; letter-spacing: 0.08em; color: #2563eb; }
+    .flow li > span:last-child { font-size: 13px; font-weight: 600; line-height: 1.35; }
     code, pre { font-family: "Roboto Mono", ui-monospace, monospace; }
     code { word-break: break-all; }
     pre { background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 12px 14px; overflow: auto; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; margin: 12px 0; }
@@ -54,17 +92,38 @@
     .fact span { color: #475569; font-size: 13px; }
     a { color: #1e40af; }
     .chains { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .chains.pick { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
     button.chain { display: flex; align-items: center; gap: 8px; min-height: 58px; padding: 8px 10px; border-radius: 14px; text-align: left; width: 100%; justify-content: flex-start; background: #f8fafc; }
     button.chain strong { display: block; font-size: 14px; }
-    button.chain .num { display: block; color: #475569; font-size: 12px; font-weight: 500; }
+    button.chain .num { display: block; color: #475569; font-size: 12px; font-weight: 500; line-height: 1.3; }
     button.chain.active { border-color: #2563eb; background: #eff6ff; }
+    .chains.pick button.chain { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 10px; min-height: 132px; padding: 14px 12px; border-radius: 16px; background: #fff; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05); }
+    .chains.pick button.chain .mi { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #eff6ff; color: #2563eb; font-size: 20px; }
+    .chains.pick button.chain .mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #eff6ff; color: #2563eb; font-size: 18px; font-weight: 700; }
+    .chains.pick button.chain.active { border-color: #2563eb; background: #f8fbff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14); }
+    .chains.pick button.chain.active .mi,
+    .chains.pick button.chain.active .mark { background: #2563eb; color: #fff; }
+    .picks { display: grid; gap: 8px; margin-top: 12px; }
+    .picks[hidden] { display: none; }
+    .picks label.pick { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 52px; gap: 12px; align-items: center; margin: 0; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; cursor: pointer; }
+    .pick-copy { display: grid; gap: 3px; min-width: 0; }
+    .pick-copy strong { font-size: 15px; line-height: 1.2; }
+    .pick-copy span { color: #475569; font-size: 13px; font-weight: 500; line-height: 1.35; }
+    .picks input { position: absolute; right: 14px; width: 52px; height: 32px; min-height: 32px; margin: 0; opacity: 0; cursor: pointer; }
+    .pick-track { width: 52px; height: 32px; border-radius: 999px; background: #e2e8f0; position: relative; justify-self: end; }
+    .pick-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2); transition: transform 160ms ease; }
+    .picks input:checked + .pick-track { background: #2563eb; }
+    .picks input:checked + .pick-track::after { transform: translateX(20px); }
+    .picks input:focus-visible + .pick-track { outline: 2px solid #2563eb; outline-offset: 3px; }
     .pay { display: flex; gap: 8px; margin-top: 12px; }
     input { min-height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; padding: 8px 12px; width: 120px; font-family: "Roboto Mono", ui-monospace, monospace; font-size: 16px; }
     #result { margin-top: 10px; }
-    .site-foot { margin-top: 28px; display: grid; justify-items: center; gap: 14px; text-align: center; color: #64748b; font-size: 14px; }
-    .site-foot a { color: #1e40af; font-weight: 700; text-decoration: none; }
-    a.github { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; background: #0f172a; color: #fff; }
-    a.github svg { width: 18px; height: 18px; display: block; }
+    .site-foot { margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 14px; text-align: center; color: #64748b; font-size: 14px; }
+    .site-foot p { margin: 0; }
+    a.github-mini { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; }
+    a.github-mini svg { width: 14px; height: 14px; display: block; }
+    a.repo { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin-top: 12px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; color: #0f172a; font-weight: 700; font-size: 14px; text-decoration: none; }
+    a.repo svg { width: 16px; height: 16px; display: block; }
     .caution { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 18px; background: rgba(15, 23, 42, 0.55); }
     .caution[hidden] { display: none; }
     .caution-card { width: min(420px, 100%); background: #fff; border-radius: 20px; padding: 22px 18px; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2); }
@@ -72,13 +131,71 @@
     .caution-card h2 { margin: 12px 0 8px; font-size: 22px; }
     .caution-card p { color: #334155; }
     .caution-card .primary { width: 100%; margin-top: 16px; }
+    html[data-theme="dark"] { color-scheme: dark; background-color: #020617; background-image: linear-gradient(180deg, #0f172a 0%, #0b1220 42%, #020617 100%); color: #e2e8f0; }
+    html[data-theme="dark"] body { color: #e2e8f0; }
+    html[data-theme="dark"] button,
+    html[data-theme="dark"] .panel,
+    html[data-theme="dark"] .lang-btn,
+    html[data-theme="dark"] .lang-pop,
+    html[data-theme="dark"] .fact,
+    html[data-theme="dark"] button.chain,
+    html[data-theme="dark"] .chains.pick button.chain,
+    html[data-theme="dark"] a.repo,
+    html[data-theme="dark"] .caution-card,
+    html[data-theme="dark"] .picks label.pick,
+    html[data-theme="dark"] input { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+    html[data-theme="dark"] button.primary,
+    html[data-theme="dark"] .caution-card .primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    html[data-theme="dark"] .hero p,
+    html[data-theme="dark"] .hero-tiny,
+    html[data-theme="dark"] .hint,
+    html[data-theme="dark"] .wiz-count,
+    html[data-theme="dark"] button.path .num,
+    html[data-theme="dark"] button.chain .num,
+    html[data-theme="dark"] .pick-copy span,
+    html[data-theme="dark"] .fact span,
+    html[data-theme="dark"] #status code,
+    html[data-theme="dark"] #status span,
+    html[data-theme="dark"] .caution-card p,
+    html[data-theme="dark"] .site-foot,
+    html[data-theme="dark"] a.metal,
+    html[data-theme="dark"] a.github-mini { color: #94a3b8; }
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2 { color: #f8fafc; }
+    html[data-theme="dark"] .kicker,
+    html[data-theme="dark"] a { color: #93c5fd; }
+    html[data-theme="dark"] a.repo,
+    html[data-theme="dark"] a.github-mini { color: #cbd5e1; }
+    html[data-theme="dark"] .lang-btn .short,
+    html[data-theme="dark"] .steps b,
+    html[data-theme="dark"] .flow .mi,
+    html[data-theme="dark"] button.path .mi,
+    html[data-theme="dark"] .chains.pick button.chain .mi,
+    html[data-theme="dark"] .chains.pick button.chain .mark,
+    html[data-theme="dark"] .lang-pop button .short { background: #172554; color: #93c5fd; }
+    html[data-theme="dark"] .flow li { background: #0f172a; border-color: #334155; }
+    html[data-theme="dark"] .flow b { color: #93c5fd; }
+    html[data-theme="dark"] .lang-pop button { background: transparent; color: #e2e8f0; }
+    html[data-theme="dark"] .lang-pop button.on,
+    html[data-theme="dark"] button.chain.active,
+    html[data-theme="dark"] .chains.pick button.chain.active { background: #172554; color: #e2e8f0; border-color: #3b82f6; }
+    html[data-theme="dark"] .chains.pick button.chain.active .mi,
+    html[data-theme="dark"] .chains.pick button.chain.active .mark { background: #2563eb; color: #fff; }
+    html[data-theme="dark"] .pick-track { background: #334155; }
+    html[data-theme="dark"] .picks input:checked + .pick-track { background: #2563eb; }
+    html[data-theme="dark"] .wiz-bar { background: #334155; }
+    html[data-theme="dark"] pre { background: #020617; color: #e2e8f0; }
+    html[data-theme="dark"] .lang-btn .caret { border-top-color: #94a3b8; }
     @media (max-width: 560px) {
       .page { padding: 20px 14px 120px; }
       h1 { font-size: 28px; }
       .hero img { width: 48px; height: 48px; }
       .status-row, .pay { flex-direction: column; align-items: stretch; }
       .status-row button, .pay button, .pay input { width: 100%; }
-      .facts, .chains { grid-template-columns: 1fr; }
+      .lang-btn .name { display: none; }
+      .facts, .chains, .chains.pick, .flow { grid-template-columns: 1fr; }
+      .flow li { grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 10px; }
+      .chains.pick button.chain { flex-direction: row; align-items: center; min-height: 76px; }
     }
   </style>
   <script>
@@ -98,95 +215,260 @@
   <div id="caution" class="caution" role="dialog" aria-modal="true" aria-labelledby="caution-title">
     <div class="caution-card">
       <img src="img/logo.png" alt="">
-      <h2 id="caution-title">Read this first</h2>
-      <p>DogeDrop has not been audited. Be careful. Test with a small amount only. A payment cannot be undone, and coins can be lost if something goes wrong.</p>
-      <button id="dismiss-caution" class="primary" type="button"><span class="mi" aria-hidden="true">check</span><span>I understand</span></button>
+      <h2 id="caution-title" data-i18n="site.cautionTitle">Read this first</h2>
+      <p data-i18n="site.caution">DogeDrop has not been audited. Be careful. Test with a small amount only. A payment cannot be undone, and coins can be lost if something goes wrong.</p>
+      <button id="dismiss-caution" class="primary" type="button"><span class="mi" aria-hidden="true">check</span><span data-i18n="site.cautionOk">I understand</span></button>
     </div>
   </div>
   <main class="page">
     <header class="hero">
       <img src="img/logo.png" alt="">
-      <div>
+      <div class="hero-copy">
         <h1>DogeDrop</h1>
-        <p>A Dogecoin wallet for any website. The keys stay in the visitor's browser.</p>
+        <p data-i18n="site.hero">Drop Dogecoin into anything</p>
+      </div>
+      <div class="hero-tools">
+        <button id="theme-btn" class="theme-btn" type="button" aria-label="Dark mode">☾</button>
+        <div class="lang-pick">
+        <button id="lang-btn" class="lang-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language">
+          <span id="lang-short" class="short">EN</span>
+          <span id="lang-name" class="name">English</span>
+          <span class="caret" aria-hidden="true"></span>
+        </button>
+        <div id="lang-pop" class="lang-pop" role="listbox" hidden></div>
+        </div>
       </div>
     </header>
 
-    <section class="panel" aria-labelledby="here-title">
-      <p class="kicker">This page</p>
-      <h2 id="here-title">Try the button</h2>
-      <p>Connect shares the address with this page. Every payment still asks first.</p>
-      <div class="status-row">
-        <p id="status">Looking for the wallet…</p>
-        <button id="connect" class="primary" type="button"><span class="mi" aria-hidden="true">link</span><span>Connect</span></button>
+    <section class="panel wizard" id="wizard">
+      <div class="wizard-top">
+        <p class="kicker" id="wiz-kicker">Start</p>
+        <p class="wiz-count" id="wiz-count"></p>
       </div>
-    </section>
+      <div class="wiz-bar" aria-hidden="true"><span id="wiz-fill"></span></div>
 
-    <section class="panel" aria-labelledby="add-title">
-      <p class="kicker">For a website</p>
-      <h2 id="add-title">Paste one line</h2>
-      <ol class="steps">
-        <li><b>1</b><span>Add the line before the end of the page.</span></li>
-        <li><b>2</b><span>A wallet button appears for the visitor.</span></li>
-        <li><b>3</b><span>Your site asks. The visitor approves.</span></li>
-      </ol>
-      <pre id="snippet"></pre>
-      <button id="copy-snippet" class="primary" type="button"><span class="mi" aria-hidden="true">content_copy</span><span>Copy snippet</span></button>
-      <p id="snippet-note" class="hint"></p>
-    </section>
-
-    <section class="panel" aria-labelledby="pay-title">
-      <p class="kicker">Payments</p>
-      <h2 id="pay-title">Same address, two chains</h2>
-      <div class="facts">
-        <div class="fact"><strong>Dogecoin</strong><span>Usually confirms in 1 to 10 minutes.</span></div>
-        <div class="fact"><strong>DogecoinVM</strong><span>Final in about a fifth of a second.</span></div>
+      <div class="wiz-step" data-step="choose">
+        <h2 id="wiz-title" data-i18n="site.wizTitle">What do you want to do?</h2>
+        <p class="hero-tiny" data-i18n="site.heroTiny">The easiest way to add self-custodial Dogecoin wallets and payments to any website or app.</p>
+        <p data-i18n="site.wizLead">Pick a path and follow the steps. You can come back and choose another.</p>
+        <div class="choices" id="wiz-choices">
+          <button type="button" class="path" data-path="try"><span class="mi" aria-hidden="true">account_balance_wallet</span><span><strong data-i18n="site.pathTry">Try it here</strong><span class="num" data-i18n="site.pathTryDetail">Connect this page, then open a test payment.</span></span></button>
+          <button type="button" class="path" data-path="embed"><span class="mi" aria-hidden="true">link</span><span><strong data-i18n="site.pathEmbed">Add the wallet to a website</strong><span class="num" data-i18n="site.pathEmbedDetail">A button on your site. The visitor approves each connection and each payment.</span></span></button>
+          <button type="button" class="path" data-path="pay"><span class="mi" aria-hidden="true">qr_code_2</span><span><strong data-i18n="site.pathPay">Take a payment</strong><span class="num" data-i18n="site.pathPayDetail">Show a QR code and the address. The visitor pays with the wallet they already have.</span></span></button>
+          <button type="button" class="path" data-path="host"><span class="mi" aria-hidden="true">download</span><span><strong data-i18n="site.pathHost">Host your own copy</strong><span class="num" data-i18n="site.pathHostDetail">Serve the wallet from your website and point the button at that folder.</span></span></button>
+        </div>
       </div>
-      <p class="hint">The address looks the same. The coins are separate. <a href="https://metaldoge.com/" target="_blank" rel="noopener">What DogecoinVM is</a></p>
-      <pre>const linked = await doge.connect();
-const sent = await doge.requestTransaction({
-  recipientAddress: 'dogecoinvm:D...?amount=1.5'
+
+      <div class="wiz-step" data-path="try" data-step="1" hidden>
+        <h2 data-i18n="site.hereTitle">Try the button</h2>
+        <p data-i18n="site.hereLead">Connect shares the address with this page. Every payment still asks first.</p>
+        <div class="status-row">
+          <p id="status">Looking for the wallet…</p>
+          <button id="connect" class="primary" type="button"><span class="mi" aria-hidden="true">link</span><span>Connect</span></button>
+        </div>
+        <h2 class="again" data-i18n="site.tryPayTitle">Pay with another wallet</h2>
+        <p data-i18n="site.tryPayLead">No new wallet. The window shows a QR code, the address with a copy button, and a button that opens dogecoin: or dogecoinvm: in the wallet you already use.</p>
+        <div class="chains" id="try-chains">
+          <button type="button" class="chain active" data-chain="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong>Dogecoin</strong><span class="num" data-i18n="site.dogeTime">1 to 10 minutes</span></span></button>
+          <button type="button" class="chain" data-chain="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong>DogecoinVM</strong><span class="num" data-i18n="site.vmTime">About 0.2 seconds</span></span></button>
+        </div>
+        <div class="pay">
+          <input id="try-amount" data-amount="1" inputmode="decimal" value="1" data-i18n-aria="site.amount" aria-label="Amount in DOGE">
+          <button id="try-pay" class="primary" type="button"><span class="mi" aria-hidden="true">qr_code_2</span><span data-i18n="site.tryPayButton">Show payment</span></button>
+        </div>
+        <p id="try-result"></p>
+      </div>
+
+      <div class="wiz-step" data-path="embed" data-step="1" hidden>
+        <h2 data-i18n="site.networks">Networks in the embed</h2>
+        <ol class="flow">
+          <li><span class="mi" aria-hidden="true">edit_note</span><span><b>1</b><span data-i18n="site.step1">Add the line before the end of the page.</span></span></li>
+          <li><span class="mi" aria-hidden="true">account_balance_wallet</span><span><b>2</b><span data-i18n="site.step2">A wallet button appears for the visitor.</span></span></li>
+          <li><span class="mi" aria-hidden="true">verified</span><span><b>3</b><span data-i18n="site.step3">Your site asks. The visitor approves.</span></span></li>
+        </ol>
+        <div class="chains pick" id="snippet-chains" role="group" data-i18n-aria="site.networks" aria-label="Networks in the embed">
+          <button type="button" class="chain active" data-chains=""><span class="mi" aria-hidden="true">account_balance_wallet</span><span><strong data-i18n="site.both">Both</strong><span class="num" data-i18n="site.bothDetail">Both networks stay on, and the bridge stays</span></span></button>
+          <button type="button" class="chain" data-chains="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong data-i18n="site.doge">Dogecoin</strong><span class="num" data-i18n="site.dogeDetail">Dogecoin only. The bridge is hidden</span></span></button>
+          <button type="button" class="chain" data-chains="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong data-i18n="site.vm">DogecoinVM</strong><span class="num" data-i18n="site.vmDetail">DogecoinVM only. The bridge is hidden</span></span></button>
+        </div>
+        <p class="hint" data-i18n="site.pickHint">Choose one network to add data-chains. The visitor cannot turn the other network back on, and the bridge is hidden.</p>
+      </div>
+
+      <div class="wiz-step" data-path="embed" data-step="2" hidden>
+        <h2 data-i18n="site.featTitle">What the visitor can do</h2>
+        <div class="chains pick" id="snippet-features" role="group" data-i18n-aria="site.featTitle" aria-label="What the visitor can do">
+          <button type="button" class="chain active" data-features="all"><span class="mi" aria-hidden="true">account_balance_wallet</span><span><strong data-i18n="site.featAll">All</strong><span class="num" data-i18n="site.featAllDetail">Wallet, payment QR, and every request</span></span></button>
+          <button type="button" class="chain" data-features="pay"><span class="mi" aria-hidden="true">qr_code_2</span><span><strong data-i18n="site.featPay">Pay QR only</strong><span class="num" data-i18n="site.featPayDetail">QR code, address, and pay button. No wallet.</span></span></button>
+          <button type="button" class="chain" data-features="pick"><span class="mi" aria-hidden="true">fact_check</span><span><strong data-i18n="site.featPick">Selected</strong><span class="num" data-i18n="site.featPickDetail">Turn each part on or off</span></span></button>
+        </div>
+        <div class="picks" id="feature-picks" hidden>
+          <label class="pick"><span class="pick-copy"><strong data-i18n="site.featPayOpt">Pay QR and pay button</strong><span data-i18n="site.featPayLead">A QR code, the address with copy, and a button that opens dogecoin: or dogecoinvm: in a wallet they already use.</span></span><input type="checkbox" role="switch" data-feature="pay" checked><span class="pick-track" aria-hidden="true"></span></label>
+          <label class="pick"><span class="pick-copy"><strong data-i18n="site.featWalletOpt">Wallet</strong><span data-i18n="site.featWalletLead">A wallet button. After they approve, the site can see the address and balances.</span></span><input type="checkbox" role="switch" data-feature="wallet" checked><span class="pick-track" aria-hidden="true"></span></label>
+          <label class="pick"><span class="pick-copy"><strong data-i18n="site.featSendOpt">Pay inside this wallet</strong><span data-i18n="site.featSendLead">The site asks this wallet to send coins. They approve the payment here. The wallet switch must stay on.</span></span><input type="checkbox" role="switch" data-feature="send"><span class="pick-track" aria-hidden="true"></span></label>
+          <label class="pick"><span class="pick-copy"><strong data-i18n="site.featSignOpt">Sign a message</strong><span data-i18n="site.featSignLead">The site asks them to sign a message. The signature does not spend coins. The wallet switch must stay on.</span></span><input type="checkbox" role="switch" data-feature="sign"><span class="pick-track" aria-hidden="true"></span></label>
+        </div>
+        <p class="hint" data-i18n="site.featHint">Pay QR only adds data-features="pay". Selected adds the parts you leave on. All leaves this out.</p>
+      </div>
+
+      <div class="wiz-step" data-path="embed" data-step="3" hidden>
+        <h2 data-i18n="site.lookTitle">Light or dark</h2>
+        <div class="chains pick" id="snippet-theme" role="group" data-i18n-aria="site.lookTitle" aria-label="Light or dark">
+          <button type="button" class="chain active" data-theme="auto"><span class="mark" aria-hidden="true">A</span><span><strong data-i18n="site.lookAuto">This device</strong><span class="num" data-i18n="site.lookAutoDetail">Follows the phone or computer</span></span></button>
+          <button type="button" class="chain" data-theme="light"><span class="mark" aria-hidden="true">☀</span><span><strong data-i18n="site.lookLight">Light</strong><span class="num" data-i18n="site.lookLightDetail">Always light</span></span></button>
+          <button type="button" class="chain" data-theme="dark"><span class="mark" aria-hidden="true">☾</span><span><strong data-i18n="site.lookDark">Dark</strong><span class="num" data-i18n="site.lookDarkDetail">Always dark</span></span></button>
+        </div>
+        <p class="hint" data-i18n="site.lookHint">This device follows the visitor on desktop and mobile. data-theme="light" or data-theme="dark" sets one look until they change it.</p>
+        <pre id="snippet"></pre>
+        <button id="copy-snippet" class="primary" type="button"><span class="mi" aria-hidden="true">content_copy</span><span data-i18n="site.copy">Copy snippet</span></button>
+        <p id="snippet-note" class="hint" data-i18n="site.snippetNote">The wallet sits in the page and can send the connected address and balances. The recovery phrase, password, and keys are not part of those messages. Another site cannot read the frame. This guide is the same site as the wallet, so its scripts can.</p>
+      </div>
+
+      <div class="wiz-step" data-path="pay" data-step="1" hidden>
+        <h2 data-i18n="site.payStepTitle">Show a payment, no new wallet</h2>
+        <p data-i18n="site.payStepLead">The visitor does not create or import a wallet. The window shows a QR code, the address with a copy button, and a button that opens dogecoin: or dogecoinvm: in the wallet they already use.</p>
+        <div class="facts">
+          <div class="fact"><strong>Dogecoin</strong><span data-i18n="site.dogeFact">Usually confirms in 1 to 10 minutes.</span></div>
+          <div class="fact"><strong>DogecoinVM</strong><span data-i18n="site.vmFact">Final in about a fifth of a second.</span></div>
+        </div>
+        <p class="hint"><span data-i18n="site.payHint">The address looks the same. The coins are separate.</span> <a href="https://metaldoge.com/" target="_blank" rel="noopener" data-i18n="site.vmLink">What DogecoinVM is</a></p>
+        <pre>await doge.showPayment({
+  recipientAddress: 'dogecoin:D...?amount=5',
+  label: 'Sticker'
 });</pre>
-      <p class="hint"><code>dogecoin:</code> pays Dogecoin. <code>dogecoinvm:</code> pays DogecoinVM.</p>
-    </section>
+        <p class="hint" data-i18n="site.schemeHint">dogecoin: pays Dogecoin. dogecoinvm: pays DogecoinVM.</p>
+      </div>
 
-    <section class="panel" aria-labelledby="tip-title">
-      <p class="kicker">Demo</p>
-      <h2 id="tip-title">Send a test tip</h2>
-      <p>This sends to <code>DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n</code>.</p>
-      <div class="chains" id="tip-chains">
-        <button type="button" class="chain active" data-chain="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong>Dogecoin</strong><span class="num">1 to 10 minutes</span></span></button>
-        <button type="button" class="chain" data-chain="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong>DogecoinVM</strong><span class="num">About 0.2 seconds</span></span></button>
+      <div class="wiz-step" data-path="try pay" data-step="2" hidden>
+        <h2 data-i18n="site.demoTitle">Send a test tip</h2>
+        <p><span data-i18n="site.demoTo">This sends to</span> <code>DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n</code>.</p>
+        <div class="chains" id="tip-chains">
+          <button type="button" class="chain active" data-chain="dogecoin"><span class="mi" aria-hidden="true">payments</span><span><strong>Dogecoin</strong><span class="num" data-i18n="site.dogeTime">1 to 10 minutes</span></span></button>
+          <button type="button" class="chain" data-chain="dogecoinvm"><span class="mi" aria-hidden="true">bolt</span><span><strong>DogecoinVM</strong><span class="num" data-i18n="site.vmTime">About 0.2 seconds</span></span></button>
+        </div>
+        <p id="tip-time" class="hint">A Dogecoin confirmation usually takes 1 to 10 minutes.</p>
+        <div class="pay">
+          <input id="amount" data-amount="1" inputmode="decimal" value="1" data-i18n-aria="site.amount" aria-label="Amount in DOGE">
+          <button id="tip" class="primary" type="button"><span class="mi" aria-hidden="true">send</span><span>Pay</span></button>
+        </div>
+        <p id="result"></p>
       </div>
-      <p id="tip-time" class="hint">A Dogecoin confirmation usually takes 1 to 10 minutes.</p>
-      <div class="pay">
-        <input id="amount" data-amount="1" inputmode="decimal" value="1" aria-label="Amount in DOGE">
-        <button id="tip" class="primary" type="button"><span class="mi" aria-hidden="true">send</span><span>Send on Dogecoin</span></button>
+
+      <div class="wiz-step" data-path="host" data-step="1" hidden>
+        <h2 data-i18n="site.hostTitle">Put the files on your site</h2>
+        <p data-i18n="site.hostLead">Load connect.js from your folder. If the script and the wallet files are not in the same place, set data-wallet to the wallet folder.</p>
+        <pre id="host-snippet"></pre>
+        <button id="copy-host" class="primary" type="button"><span class="mi" aria-hidden="true">content_copy</span><span data-i18n="site.copy">Copy snippet</span></button>
+        <p class="hint" data-i18n="site.hostNote">If the shop page and the wallet share one address, that page can read the wallet. Use a separate address, such as wallet.example.com, when the shop should not read it.</p>
+        <a class="repo" href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span data-i18n="site.hostGithub">Get the code on GitHub</span>
+        </a>
       </div>
-      <p id="result"></p>
+
+      <div class="wiz-step" data-path="host" data-step="2" hidden>
+        <h2 data-i18n="site.hostRunTitle">Run the DogecoinVM proxy</h2>
+        <p data-i18n="site.hostRunLead">The wallet pages are static. A browser cannot call metaldoge.com directly, because that site does not allow it. The program in the metaldoge folder forwards only public lookups and signed payments. Keys never go through it.</p>
+        <ol class="steps">
+          <li><b>1</b><span data-i18n="site.hostRun1">Install Node 18 or newer. There are no packages to install.</span></li>
+          <li><b>2</b><span data-i18n="site.hostRun2">On the server, open the metaldoge folder and start the proxy. It listens on 127.0.0.1, port 8787.</span></li>
+          <li><b>3</b><span data-i18n="site.hostRun3">Put HTTPS in front of it. nginx can pass visits to 127.0.0.1:8787.</span></li>
+          <li><b>4</b><span data-i18n="site.hostRun4">Set TRUST_PROXY=1 when nginx is the only program that can reach that port, so each visitor is counted on their own.</span></li>
+          <li><b>5</b><span data-i18n="site.hostRun5">Set ALLOWED_ORIGINS to your website address. The proxy answers only those sites.</span></li>
+        </ol>
+        <pre>cd metaldoge
+node server.mjs</pre>
+        <p class="hint" data-i18n="site.hostRunWindows">On Windows, set TRUST_PROXY=1 in the terminal, then run node server.mjs.</p>
+        <pre>ALLOWED_ORIGINS=https://example.com TRUST_PROXY=1 node server.mjs</pre>
+        <p class="hint" data-i18n="site.hostRunLimit">It forwards only chain info, an address lookup, a transaction lookup, and a signed payment. Every other path is refused.</p>
+        <p class="hint" data-i18n="site.hostRunSettings">In the wallet Settings, choose Custom for DogecoinVM and enter the https address of your proxy.</p>
+      </div>
+
+      <div class="wiz-nav" id="wiz-nav" hidden>
+        <button id="wiz-back" type="button"><span class="mi" aria-hidden="true">arrow_back</span><span>Back</span></button>
+        <button id="wiz-next" class="primary" type="button"><span>Next</span></button>
+      </div>
     </section>
 
     <footer class="site-foot">
-      <p>The wallet by itself is at <a href="wallet/">dogedrop.org/wallet</a>.</p>
-      <a class="github" href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">
+      <p data-i18n="site.foot">Coded with love to all Dogecoin community</p>
+      <a class="metal" href="https://metallicus.com/" target="_blank" rel="noopener"><img src="img/metallicus_logo.png" alt=""><span>Metallicus</span></a>
+      <a class="github-mini" href="https://github.com/qlpqlp/dogedrop" target="_blank" rel="noopener">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-        <span>Open source on GitHub</span>
+        <span data-i18n="site.github">GitHub</span>
       </a>
     </footer>
   </main>
+  <script src="wallet/js/i18n.js"></script>
   <script>
     const tipTo = 'DTqAFgNNUgiPEfGmc4HZUkqJ4sz5vADd1n';
+    if (window.DogeI18n) window.DogeI18n.start();
+    function t(key, vars) { return window.DogeI18n ? window.DogeI18n.t(key, vars) : key; }
+    function esc(value) { return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])); }
 
     function setLabeled(id, glyph, label) {
       const button = document.getElementById(id);
-      button.innerHTML = '<span class="mi" aria-hidden="true">' + glyph + '</span><span>' + label + '</span>';
+      button.innerHTML = '<span class="mi" aria-hidden="true">' + glyph + '</span><span>' + esc(label) + '</span>';
     }
     const status = document.getElementById('status');
     const result = document.getElementById('result');
     const walletHost = 'https://dogedrop.org/wallet/';
-    const snippet = '<script src="' + walletHost + 'connect.js" data-label="DogeWallet"><' + '/script>';
-    document.getElementById('snippet').textContent = snippet;
-    document.getElementById('snippet-note').textContent = 'The wallet loads from dogedrop.org/wallet, so another site cannot read the keys. This guide is on the same address, and the wallet says so.';
+    let snippetChains = '';
+    let snippetMode = 'all';
+    let snippetTheme = 'auto';
+    const picks = { pay: true, wallet: true, send: false, sign: false };
+    let snippet = '';
+    function featuresAttr() {
+      if (snippetMode === 'pay') return ' data-features="pay"';
+      if (snippetMode !== 'pick') return '';
+      if (picks.send || picks.sign) picks.wallet = true;
+      const ids = ['pay', 'wallet', 'send', 'sign'].filter((id) => picks[id]);
+      if (!ids.length) { picks.pay = true; ids.push('pay'); }
+      if (ids.length === 4) return '';
+      return ' data-features="' + ids.join(',') + '"';
+    }
+    function embedSnippet() {
+      const lock = snippetChains === 'dogecoin' || snippetChains === 'dogecoinvm' ? ' data-chains="' + snippetChains + '"' : '';
+      const lang = window.DogeI18n && window.DogeI18n.lang() ? ' data-lang="' + window.DogeI18n.lang() + '"' : '';
+      const theme = snippetTheme === 'light' || snippetTheme === 'dark' ? snippetTheme : 'auto';
+      const features = featuresAttr();
+      return '<script src="' + walletHost + 'connect.js" data-label="DogeWallet" data-theme="' + theme + '"' + features + lock + lang + '><' + '/script>';
+    }
+    function paintSnippet() {
+      snippet = embedSnippet();
+      document.getElementById('snippet').textContent = snippet;
+    }
+    document.getElementById('snippet-features').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-features]');
+      if (!button || !button.closest('#snippet-features')) return;
+      snippetMode = button.dataset.features || 'all';
+      document.querySelectorAll('#snippet-features button').forEach((item) => item.classList.toggle('active', item === button));
+      document.getElementById('feature-picks').hidden = snippetMode !== 'pick';
+      paintSnippet();
+    });
+    document.getElementById('feature-picks').addEventListener('change', (event) => {
+      const box = event.target;
+      if (!box.dataset || !box.dataset.feature) return;
+      picks[box.dataset.feature] = box.checked;
+      if ((box.dataset.feature === 'send' || box.dataset.feature === 'sign') && box.checked) picks.wallet = true;
+      if (box.dataset.feature === 'wallet' && !box.checked) { picks.send = false; picks.sign = false; }
+      if (!picks.pay && !picks.wallet && !picks.send && !picks.sign) picks.pay = true;
+      document.querySelectorAll('#feature-picks input').forEach((input) => { input.checked = !!picks[input.dataset.feature]; });
+      paintSnippet();
+    });
+    document.getElementById('snippet-theme').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-theme]');
+      if (!button || !button.closest('#snippet-theme')) return;
+      snippetTheme = button.dataset.theme === 'light' || button.dataset.theme === 'dark' ? button.dataset.theme : 'auto';
+      document.querySelectorAll('#snippet-theme button').forEach((item) => item.classList.toggle('active', item === button));
+      paintSnippet();
+    });
+    document.getElementById('snippet-chains').addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button || !button.closest('#snippet-chains')) return;
+      snippetChains = button.dataset.chains || '';
+      document.querySelectorAll('#snippet-chains button').forEach((item) => item.classList.toggle('active', item === button));
+      paintSnippet();
+    });
 
     const caution = document.getElementById('caution');
     try { if (localStorage.getItem('dogedrop.caution.demo.v1') === '1') caution.hidden = true; } catch { /* Show the warning when storage is blocked. */ }
@@ -198,14 +480,14 @@ const sent = await doge.requestTransaction({
     async function showStatus() {
       const connection = await window.doge.getConnectionStatus();
       if (!connection.connected) {
-        status.textContent = 'Not connected to this page.';
-        setLabeled('connect', 'link', 'Connect');
+        status.textContent = t('site.notConnected');
+        setLabeled('connect', 'link', t('site.connect'));
         return;
       }
       const balance = await window.doge.getBalance();
-      const vmLine = balance.balanceVmDoge == null ? 'DogecoinVM balance not loaded yet' : ('DogecoinVM ' + balance.balanceVmDoge + ' DOGE');
-      status.innerHTML = '<strong>Connected</strong><code>' + connection.address + '</code><span>Dogecoin ' + balance.balanceDoge + ' DOGE</span><span>' + vmLine + '</span>';
-      setLabeled('connect', 'close', 'Disconnect');
+      const vmLine = balance.balanceVmDoge == null ? t('site.vmPending') : t('site.vmLine', { amount: balance.balanceVmDoge });
+      status.innerHTML = '<strong>' + esc(t('site.connected')) + '</strong><code>' + esc(connection.address) + '</code><span>' + esc(t('site.dogeLine', { amount: balance.balanceDoge })) + '</span><span>' + esc(vmLine) + '</span>';
+      setLabeled('connect', 'close', t('site.disconnect'));
     }
 
     document.getElementById('amount').addEventListener('input', (event) => {
@@ -221,20 +503,24 @@ const sent = await doge.requestTransaction({
       window.doge.on('disconnect', () => { showStatus().catch(() => {}); });
     }
 
-    document.getElementById('copy-snippet').addEventListener('click', async () => {
+    const hostSnippet = '<script src="https://example.com/wallet/connect.js" data-label="DogeWallet" data-wallet="https://example.com/wallet/"><' + '/script>';
+    document.getElementById('host-snippet').textContent = hostSnippet;
+    async function copyText(id, text) {
       try {
-        await navigator.clipboard.writeText(snippet);
+        await navigator.clipboard.writeText(text);
       } catch {
         const area = document.createElement('textarea');
-        area.value = snippet;
+        area.value = text;
         document.body.appendChild(area);
         area.select();
         document.execCommand('copy');
         area.remove();
       }
-      setLabeled('copy-snippet', 'check', 'Copied');
-      setTimeout(() => { setLabeled('copy-snippet', 'content_copy', 'Copy snippet'); }, 1500);
-    });
+      setLabeled(id, 'check', t('site.copied'));
+      setTimeout(() => { setLabeled(id, 'content_copy', t('site.copy')); }, 1500);
+    }
+    document.getElementById('copy-snippet').addEventListener('click', () => { copyText('copy-snippet', snippet); });
+    document.getElementById('copy-host').addEventListener('click', () => { copyText('copy-host', hostSnippet); });
 
     document.getElementById('connect').addEventListener('click', async () => {
       try {
@@ -252,34 +538,172 @@ const sent = await doge.requestTransaction({
       return active && active.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
     }
 
+    function paintTip() {
+      const vm = selectedChain() === 'dogecoinvm';
+      document.getElementById('tip-time').textContent = t(vm ? 'site.tipVm' : 'site.tipDoge');
+      setLabeled('tip', 'send', t('site.payNow'));
+    }
+
     document.getElementById('tip-chains').addEventListener('click', (event) => {
       const button = event.target.closest('[data-chain]');
       if (!button) return;
       document.querySelectorAll('#tip-chains .chain').forEach((item) => item.classList.toggle('active', item === button));
-      const vm = button.dataset.chain === 'dogecoinvm';
-      document.getElementById('tip-time').textContent = vm
-        ? 'A DogecoinVM payment is final in about a fifth of a second.'
-        : 'A Dogecoin confirmation usually takes 1 to 10 minutes.';
-      setLabeled('tip', 'send', vm ? 'Send on DogecoinVM' : 'Send on Dogecoin');
+      paintTip();
+    });
+
+    document.getElementById('try-chains').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-chain]');
+      if (!button || !button.closest('#try-chains')) return;
+      document.querySelectorAll('#try-chains .chain').forEach((item) => item.classList.toggle('active', item === button));
+    });
+    document.getElementById('try-pay').addEventListener('click', async () => {
+      const active = document.querySelector('#try-chains .chain.active');
+      const chain = active && active.dataset.chain === 'dogecoinvm' ? 'dogecoinvm' : 'dogecoin';
+      const amount = document.getElementById('try-amount').value;
+      const request = chain + ':' + tipTo + '?amount=' + encodeURIComponent(amount);
+      const out = document.getElementById('try-result');
+      out.textContent = t('site.opening');
+      try {
+        await window.doge.showPayment({ recipientAddress: request, label: 'Test tip', externalOnly: true });
+        out.textContent = t('site.shown');
+      } catch (error) {
+        out.textContent = error.message;
+      }
     });
 
     document.getElementById('tip').addEventListener('click', async () => {
       const chain = selectedChain();
       const amount = document.getElementById('amount').value;
       const request = chain + ':' + tipTo + '?amount=' + encodeURIComponent(amount);
-      result.textContent = 'Waiting for you to approve the payment…';
+      result.textContent = t('site.opening');
       try {
-        const sent = await window.doge.requestTransaction({ recipientAddress: request });
-        const href = chain === 'dogecoinvm'
-          ? 'https://metaldoge.com/api/tx/' + sent.txid
-          : 'https://dogechain.com/tx/' + sent.txid;
-        const name = chain === 'dogecoinvm' ? 'DogecoinVM' : 'Dogecoin';
-        result.innerHTML = 'Sent on ' + name + '. <a href="' + href + '" target="_blank" rel="noopener">View payment</a>';
-        await showStatus();
+        await window.doge.showPayment({ recipientAddress: request, label: 'Test tip' });
+        result.textContent = t('site.shown');
       } catch (error) {
         result.textContent = error.message;
       }
     });
+
+    const pathTitles = { try: 'site.pathTry', embed: 'site.pathEmbed', pay: 'site.pathPay', host: 'site.pathHost' };
+    const pathLength = { try: 2, embed: 3, pay: 2, host: 2 };
+    let wizPath = '';
+    let wizStep = 0;
+
+    function setText(id, label) {
+      const span = document.getElementById(id).querySelector('span:not(.mi)');
+      if (span) span.textContent = label;
+    }
+
+    function paintWizard() {
+      document.querySelectorAll('.wiz-step').forEach((el) => {
+        const paths = (el.dataset.path || '').split(' ').filter(Boolean);
+        const show = wizPath ? paths.includes(wizPath) && Number(el.dataset.step) === wizStep : el.dataset.step === 'choose';
+        el.hidden = !show;
+      });
+      const total = pathLength[wizPath] || 0;
+      document.getElementById('wiz-nav').hidden = !wizPath;
+      document.getElementById('wiz-kicker').textContent = wizPath ? t(pathTitles[wizPath]) : t('site.wizKicker');
+      document.getElementById('wiz-count').textContent = wizPath && total > 1 ? t('site.wizStep', { n: wizStep, total }) : '';
+      document.getElementById('wiz-fill').style.width = total ? Math.round((wizStep / total) * 100) + '%' : '0%';
+      setLabeled('wiz-back', 'arrow_back', t('site.wizBack'));
+      setText('wiz-next', wizStep >= total ? t('site.wizDone') : t('site.wizNext'));
+    }
+
+    document.getElementById('wiz-choices').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-path]');
+      if (!button) return;
+      wizPath = button.dataset.path;
+      wizStep = 1;
+      paintWizard();
+    });
+    document.getElementById('wiz-back').addEventListener('click', () => {
+      if (wizStep <= 1) { wizPath = ''; wizStep = 0; }
+      else wizStep -= 1;
+      paintWizard();
+    });
+    document.getElementById('wiz-next').addEventListener('click', () => {
+      if (wizStep >= (pathLength[wizPath] || 0)) { wizPath = ''; wizStep = 0; }
+      else wizStep += 1;
+      paintWizard();
+    });
+
+    function paintTheme() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      const btn = document.getElementById('theme-btn');
+      btn.textContent = dark ? '☀' : '☾';
+      btn.setAttribute('aria-label', t(dark ? 'theme.light' : 'theme.dark'));
+      const chip = document.getElementById('doge-pocket-button');
+      const phone = document.getElementById('doge-pocket-phone');
+      if (chip) chip.classList.toggle('is-dark', dark);
+      if (phone) phone.classList.toggle('is-dark', dark);
+    }
+    document.getElementById('theme-btn').addEventListener('click', () => {
+      if (!window.DogeTheme) return;
+      window.DogeTheme.choose(window.DogeTheme.current() === 'dark' ? 'light' : 'dark');
+      paintTheme();
+    });
+    document.documentElement.addEventListener('dogedrop-theme', paintTheme);
+    function closeLang() {
+      document.getElementById('lang-pop').hidden = true;
+      document.getElementById('lang-btn').setAttribute('aria-expanded', 'false');
+    }
+    function paintLang() {
+      const current = window.DogeI18n ? window.DogeI18n.current() : { id: 'en', label: 'English', short: 'EN' };
+      document.getElementById('lang-short').textContent = current.short;
+      document.getElementById('lang-name').textContent = current.label;
+      document.getElementById('lang-btn').setAttribute('aria-label', t('site.lang'));
+      const pop = document.getElementById('lang-pop');
+      pop.setAttribute('aria-label', t('site.lang'));
+      const id = window.DogeI18n ? window.DogeI18n.lang() : 'en';
+      pop.innerHTML = (window.DogeI18n ? window.DogeI18n.list() : []).map((item) =>
+        '<button type="button" role="option" aria-selected="' + (item.id === id) + '" class="' + (item.id === id ? 'on' : '') + '" data-lang="' + esc(item.id) + '"><span class="short">' + esc(item.short) + '</span><span>' + esc(item.label) + '</span>' + (item.id === id ? '<span class="mi" aria-hidden="true">check</span>' : '') + '</button>'
+      ).join('');
+    }
+    document.getElementById('lang-btn').addEventListener('click', (event) => {
+      event.stopPropagation();
+      const pop = document.getElementById('lang-pop');
+      const open = pop.hidden;
+      pop.hidden = !open;
+      document.getElementById('lang-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.getElementById('lang-pop').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-lang]');
+      if (!button || !window.DogeI18n) return;
+      window.DogeI18n.choose(button.dataset.lang);
+      closeLang();
+      applySite();
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.lang-pick')) closeLang();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeLang();
+    });
+
+    function applySite() {
+      document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+      document.querySelectorAll('[data-i18n-aria]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+      paintLang();
+      paintTheme();
+      paintWizard();
+      paintSnippet();
+      paintTip();
+      status.textContent = t('site.notConnected');
+      setLabeled('connect', 'link', t('site.connect'));
+      if (window.doge) showStatus().catch(() => {});
+    }
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'dogedrop.theme' && window.DogeTheme) {
+        window.DogeTheme.refresh();
+        paintTheme();
+        return;
+      }
+      if (event.key !== 'dogedrop.lang' || !window.DogeI18n) return;
+      window.DogeI18n.start();
+      applySite();
+    });
+    applySite();
   </script>
 </body>
 </html>

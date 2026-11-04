@@ -21,9 +21,15 @@ var DogeChain = (() => {
   var chain_exports = {};
   __export(chain_exports, {
     DOGE: () => DOGE,
+    DOGECOINVM_CHAIN_ID: () => DOGECOINVM_CHAIN_ID,
     accountFromMnemonic: () => accountFromMnemonic,
     accountFromWif: () => accountFromWif,
+    addressFromBridgeTag: () => addressFromBridgeTag,
     addressFromPrivateKey: () => addressFromPrivateKey,
+    bridgeDepositAddress: () => bridgeDepositAddress,
+    bridgeDepositScript: () => bridgeDepositScript,
+    bridgeWithdrawTag: () => bridgeWithdrawTag,
+    checkBridgeDeposit: () => checkBridgeDeposit,
     createMnemonic: () => createMnemonic,
     decryptSecret: () => decryptSecret,
     deriveAddress: () => deriveAddress,
@@ -4067,6 +4073,7 @@ var DogeChain = (() => {
     const _sha256 = sha2563;
     return chain(checksum(4, (data) => _sha256(_sha256(data))), base58);
   };
+  var base58check = createBase58check;
   var BECH_ALPHABET = /* @__PURE__ */ alphabet("qpzry9x8gf2tvdw0s3jn54khce6mua7l");
   var BECH_UPPERCASE_PRINTABLE = /^[\x21-\x60\x7b-\x7e]+$/;
   function assertBech32Printable(label, value) {
@@ -4363,7 +4370,7 @@ var DogeChain = (() => {
   // node_modules/@scure/bip32/index.js
   var Point2 = /* @__PURE__ */ (() => secp256k1.Point)();
   var Fn = /* @__PURE__ */ (() => Point2.Fn)();
-  var base58check = /* @__PURE__ */ createBase58check(sha256);
+  var base58check2 = /* @__PURE__ */ createBase58check(sha256);
   var MASTER_SECRET = /* @__PURE__ */ (() => {
     return Uint8Array.from("Bitcoin seed".split(""), (char) => char.charCodeAt(0));
   })();
@@ -4415,13 +4422,13 @@ var DogeChain = (() => {
       if (!priv) {
         throw new Error("No private key");
       }
-      return base58check.encode(this.serialize(this.versions.private, concatBytes(Uint8Array.of(0), priv)));
+      return base58check2.encode(this.serialize(this.versions.private, concatBytes(Uint8Array.of(0), priv)));
     }
     get publicExtendedKey() {
       if (!this._publicKey) {
         throw new Error("No public key");
       }
-      return base58check.encode(this.serialize(this.versions.public, this._publicKey));
+      return base58check2.encode(this.serialize(this.versions.public, this._publicKey));
     }
     static fromMasterSeed(seed, versions = BITCOIN_VERSIONS) {
       abytes(seed);
@@ -4436,7 +4443,7 @@ var DogeChain = (() => {
     }
     static fromExtendedKey(base58key, versions = BITCOIN_VERSIONS) {
       versions = validateVersions(versions);
-      const keyBuffer = base58check.decode(base58key);
+      const keyBuffer = base58check2.decode(base58key);
       if (keyBuffer.length !== 78) {
         throw new Error(`HDKey: invalid extended key length: expected 78 bytes, got ${keyBuffer.length}`);
       }
@@ -9676,7 +9683,7 @@ zoo`.split("\n"));
     return version;
   };
   var tapLeafHash = (script, version = TAP_LEAF_VERSION) => tagSchnorr("TapLeaf", new Uint8Array([tapLeafVersion(version)]), VarBytes.encode(script));
-  var base58check2 = /* @__PURE__ */ createBase58check(sha2562);
+  var base58check3 = /* @__PURE__ */ createBase58check(sha2562);
   function validateWitness(version, data) {
     if (data.length < 2 || data.length > 40)
       throw new Error("Witness: invalid length");
@@ -9691,7 +9698,7 @@ zoo`.split("\n"));
     return coder.encode(network.bech32, [version].concat(coder.toWords(data)));
   }
   function formatKey(hashed, prefix2) {
-    return base58check2.encode(concatBytes5(Uint8Array.from(prefix2), hashed));
+    return base58check3.encode(concatBytes5(Uint8Array.from(prefix2), hashed));
   }
   function WIF(network = NETWORK) {
     return {
@@ -9701,7 +9708,7 @@ zoo`.split("\n"));
         return formatKey(compressed.subarray(0, 33), [network.wif]);
       },
       decode(wif) {
-        let parsed = base58check2.decode(wif);
+        let parsed = base58check3.decode(wif);
         if (parsed[0] !== network.wif)
           throw new Error("Wrong WIF prefix");
         parsed = parsed.subarray(1);
@@ -9765,7 +9772,7 @@ zoo`.split("\n"));
           else
             throw new Error("Unknown witness program");
         }
-        const data = base58check2.decode(address);
+        const data = base58check3.decode(address);
         if (data.length !== 21)
           throw new Error("Invalid base58 address");
         if (data[0] === network.pubKeyHash) {
@@ -12981,6 +12988,7 @@ zoo`.split("\n"));
   // src/chain.mjs
   hashes.sha256 = sha256;
   hashes.hmacSha256 = (key, message) => hmac(sha256, key, message);
+  var DOGECOINVM_CHAIN_ID = "2hFCfzdMmfXBxYgvvdL7BYiJAxdejyn4AksMYUM2eM5gN7Xrjy";
   var DOGE = Object.freeze({
     bech32: "doge",
     pubKeyHash: 30,
@@ -13059,6 +13067,66 @@ zoo`.split("\n"));
       return false;
     }
   }
+  function bridgeDepositScript(address, signers) {
+    const decoded = Address(DOGE).decode(String(address || "").trim());
+    const type = decoded?.type === "pkh" ? 0 : decoded?.type === "sh" ? 1 : null;
+    if (type == null || decoded.hash?.length !== 20) throw new Error("That address cannot receive a bridge credit.");
+    const pubs = (signers?.publicKeys || []).map((item) => {
+      const bytes = hex.decode(String(item || "").trim());
+      if (bytes.length !== 33 || bytes[0] !== 2 && bytes[0] !== 3) throw new Error("A bridge signer key is not valid.");
+      return bytes;
+    });
+    const required = Number(signers?.required);
+    if (!Number.isInteger(required) || required < 1 || required > pubs.length || pubs.length < 1 || pubs.length > 15) {
+      throw new Error("The bridge signer set is not valid.");
+    }
+    const marked = new Uint8Array(21);
+    marked[0] = type;
+    marked.set(decoded.hash, 1);
+    const parts = [new Uint8Array([marked.length]), marked, new Uint8Array([117, 80 + required])];
+    for (const pub of pubs) parts.push(new Uint8Array([pub.length]), pub);
+    parts.push(new Uint8Array([80 + pubs.length, 174]));
+    return concat(...parts);
+  }
+  function bridgeDepositAddress(address, signers) {
+    return p2shAddress(bridgeDepositScript(address, signers));
+  }
+  function checkBridgeDeposit({ address, signers, depositAddress, redeemScript }) {
+    const built = bridgeDepositScript(address, signers);
+    const given = hex.decode(String(redeemScript || ""));
+    if (!sameBytes(built, given)) throw new Error("The deposit address does not match this wallet. Nothing was prepared.");
+    const derived = p2shAddress(built);
+    if (derived !== String(depositAddress || "").trim()) throw new Error("The deposit address does not match its script. Nothing was prepared.");
+    return derived;
+  }
+  function bridgeWithdrawTag(address) {
+    const decoded = Address(DOGE).decode(String(address || "").trim());
+    if (decoded?.type !== "pkh" || decoded.hash?.length !== 20) throw new Error("Enter a Dogecoin address that starts with D.");
+    const script = new Uint8Array(27);
+    script[0] = 106;
+    script[1] = 25;
+    script.set(new TextEncoder().encode("DVMO"), 2);
+    script[6] = 0;
+    script.set(decoded.hash, 7);
+    return hex.encode(script);
+  }
+  function addressFromBridgeTag(scriptHex) {
+    const script = hex.decode(String(scriptHex || ""));
+    const tag = script.length === 27 ? new TextDecoder().decode(script.subarray(2, 6)) : "";
+    if (script[0] !== 106 || script[1] !== 25 || tag !== "DVMO" || script[6] !== 0) {
+      throw new Error("The withdrawal tag does not name a Dogecoin address.");
+    }
+    return base58check(sha256).encode(concat(new Uint8Array([DOGE.pubKeyHash]), script.subarray(7)));
+  }
+  function p2shAddress(script) {
+    return base58check(sha256).encode(concat(new Uint8Array([DOGE.scriptHash]), ripemd160(sha256(script))));
+  }
+  function sameBytes(left, right) {
+    if (left.length !== right.length) return false;
+    let diff = 0;
+    for (let i = 0; i < left.length; i += 1) diff |= left[i] ^ right[i];
+    return diff === 0;
+  }
   function scriptForAddress(address) {
     const decoded = Address(DOGE).decode(String(address || "").trim());
     if (!decoded || decoded.type !== "pkh" || decoded.hash?.length !== 20) {
@@ -13123,7 +13191,10 @@ zoo`.split("\n"));
     return { inputs, fee, change: 0n, amount: total - fee, sendAll: true };
   }
   function signPayment({ inputs, outputs, privateKeys }) {
-    const tx = new Transaction({ allowLegacyWitnessUtxo: true });
+    const tx = new Transaction({
+      allowLegacyWitnessUtxo: true,
+      allowUnknownOutputs: outputs.some((output) => output.script)
+    });
     inputs.forEach((input) => {
       tx.addInput({
         txid: hex.decode(input.txid),
@@ -13136,6 +13207,11 @@ zoo`.split("\n"));
       });
     });
     outputs.forEach((output) => {
+      if (output.script) {
+        if (output.value !== 0n) throw new Error("A message output must be worth zero.");
+        tx.addOutput({ script: hex.decode(output.script), amount: 0n });
+        return;
+      }
       if (output.value <= 0n) throw new Error("A payment output must be greater than zero.");
       tx.addOutputAddress(output.address, output.value, DOGE);
     });
@@ -13228,10 +13304,14 @@ zoo`.split("\n"));
     }
     return { chain: scheme, address, amount, label, message };
   }
-  function paymentUri(chain2, address, amount = "") {
+  function paymentUri(chain2, address, amount = "", extra = {}) {
     const scheme = chain2 === "dogecoinvm" ? "dogecoinvm" : "dogecoin";
     const base = `${scheme}:${address}`;
-    return amount ? `${base}?amount=${amount}` : base;
+    const parts = [];
+    if (amount) parts.push(`amount=${encodeURIComponent(amount)}`);
+    if (extra && extra.label) parts.push(`label=${encodeURIComponent(extra.label)}`);
+    if (extra && extra.message) parts.push(`message=${encodeURIComponent(extra.message)}`);
+    return parts.length ? `${base}?${parts.join("&")}` : base;
   }
   function qrSvg(text) {
     const qr = qrcode(0, "M");

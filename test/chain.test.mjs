@@ -9,6 +9,11 @@ import { Transaction } from '@scure/btc-signer';
 import { hex } from '@scure/base';
 import {
   accountFromMnemonic,
+  addressFromBridgeTag,
+  bridgeDepositAddress,
+  bridgeDepositScript,
+  bridgeWithdrawTag,
+  checkBridgeDeposit,
   createMnemonic,
   decryptSecret,
   deriveAddress,
@@ -120,6 +125,60 @@ test('DIP 21 payment links choose the chain and the amount', () => {
   assert.throws(() => parsePayment(`dogecoin:${address}?amount=50,000.00`), /amount/);
   assert.throws(() => parsePayment(`dogecoinvm:${address}?req-bridge=1`), /required part/);
   assert.throws(() => parsePayment('bitcoin:not-doge'), /dogecoin:/);
+});
+
+test('bridge deposit address is checked from the signer set, and a withdrawal tag names the address', () => {
+  const { xpub } = accountFromMnemonic(PHRASE);
+  const address = deriveAddress(xpub, 0, 0).address;
+  const signers = {
+    required: 2,
+    publicKeys: [
+      '02' + '11'.repeat(32),
+      '03' + '22'.repeat(32),
+      '02' + '33'.repeat(32),
+    ],
+  };
+  const depositAddress = bridgeDepositAddress(address, signers);
+  assert.match(depositAddress, /^[9A]/);
+  assert.equal(checkBridgeDeposit({
+    address,
+    signers,
+    depositAddress,
+    redeemScript: hex.encode(bridgeDepositScript(address, signers)),
+  }), depositAddress);
+  assert.throws(() => checkBridgeDeposit({
+    address,
+    signers,
+    depositAddress,
+    redeemScript: '00',
+  }), /does not match/);
+  const tag = bridgeWithdrawTag(address);
+  assert.equal(addressFromBridgeTag(tag), address);
+  const privateKey = privateKeyForPath(PHRASE, '', 0, 0);
+  try {
+    const signed = signPayment({
+      inputs: [{
+        txid: '22'.repeat(32),
+        vout: 0,
+        value: 500000000n,
+        address,
+        script: scriptForAddress(address),
+      }],
+      outputs: [
+        { address: depositAddress, value: 200000000n },
+        { script: tag, value: 0n },
+        { address, value: 299000000n },
+      ],
+      privateKeys: { [address]: privateKey },
+    });
+    const tx = Transaction.fromRaw(hex.decode(signed.hex), { allowUnknownOutputs: true });
+    assert.equal(tx.outputsLength, 3);
+    assert.equal(tx.getOutputAddress(0, DOGE), depositAddress);
+    assert.equal(tx.getOutput(1).amount, 0n);
+    assert.equal(hex.encode(tx.getOutput(1).script), tag);
+  } finally {
+    privateKey.fill(0);
+  }
 });
 
 test('DOGE amounts use exact koinu', () => {
