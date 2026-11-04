@@ -55,6 +55,7 @@ DogeI18n.add({
       sendOne: 'Zahlungen bleiben auf {chain}. Ein Link für das andere Netz wird nicht bezahlt.',
       locked: 'Dieser Zahlungslink wählt die Chain schon. Er wird nicht auf der anderen Chain bezahlt.',
       receive: 'Der QR ist ein {scheme}-Link, ein Scan zahlt also {chain}. {wait} Die Adresse darunter ist nur die Adresse. Nach einem Zahlungseingang erscheint hier die nächste.',
+      receiveFixed: 'Der QR ist ein {scheme}-Link, ein Scan zahlt also {chain}. {wait} Die Adresse darunter bleibt nach einem Zahlungseingang dieselbe.',
     },
     empty: { node: 'Ein Node kann Coins zum Ausgeben finden, speichert aber keine Adresshistorie.', none: 'Für dieses Wallet wurden noch keine Zahlungen gefunden.' },
     send: { title: 'Senden auf {chain}' },
@@ -65,6 +66,7 @@ DogeI18n.add({
     settings: {
       title: 'Verbindung', hostLock: 'Diese Website hält das Wallet nur auf {chain}. Das andere Netz und die Brücke gibt es hier nicht.',
       networks: 'Schalten Sie ein Netz aus, um es zu verbergen. Die Brücke bleibt nur, solange beide an sind. Mindestens eines bleibt an.',
+      fixedReceive: 'Eine Empfangsadresse',
       lookup: 'Wo Coins gesucht werden', broadcast: 'Wohin die signierte Zahlung geht', same: 'Wie oben',
       public: 'Öffentliche Explorer', core: 'Dogecoin Core', dogego: 'DogeGo', meme: 'MemeTracker',
       token: 'BlockCypher-Token, optional', sochain: 'SoChain-API-Schlüssel', coreUrl: 'Dogecoin-Core-URL', dogegoUrl: 'DogeGo-URL',
@@ -144,6 +146,7 @@ DogeI18n.add({
       backup: 'Das sind die Wörter, mit denen sich die Coins wiederherstellen lassen. Halten Sie sie geheim. Verbergen Sie diesen Bildschirm, wenn Sie fertig sind.',
       unlock: 'Das Passwort öffnet das Wallet. Es sperrt sich wieder nach der Zeit in den Einstellungen, die bei 60 Sekunden ohne Tippen oder Schreiben beginnt.',
       docs: 'Suchen Sie in diesen Notizen, wie das Wallet funktioniert, wo Schlüssel liegen, worauf zu achten ist und wie man es einer Website hinzufügt.',
+      fixedReceive: 'Empfangen bleibt auf der ersten Adresse der 12 Wörter. Eine Zahlung wechselt nicht zur nächsten. Der Rest einer Sendung kommt auf dieselbe Adresse zurück. Ältere Adressen werden weiter geprüft.',
       language: 'Wählen Sie die Sprache dieses Wallets. Dieselbe Wahl gilt auf dieser Website, wenn sie denselben Browser nutzen.',
       'pay-choice': 'Das ist die Zahlung der Website. Scannen Sie den QR-Code, kopieren Sie die Adresse, oder öffnen Sie sie in einem Wallet, das Sie schon haben. Sie müssen hier kein Wallet anlegen.',
     },

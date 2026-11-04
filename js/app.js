@@ -1,7 +1,7 @@
 (function () {
   try { if (window.opener) window.opener = null; } catch { /* The opener is already gone. */ }
   // Bump this when a fix or feature ships. Settings shows it.
-  const WALLET_VERSION = '1.3.0';
+  const WALLET_VERSION = '1.4.0';
   const VAULT_KEY = 'doge-pocket.vault.v1';
   const PUBLIC_KEY = 'doge-pocket.public.v1';
   const SETTINGS_KEY = 'doge-pocket.settings.v1';
@@ -283,6 +283,7 @@
     if (event.target.closest('.tabbar, .top-actions, .chains')) noteActivity();
     const button = event.target.closest('[data-action]');
     if (!button || button.disabled || button.tagName === 'FORM') return;
+    if (button.dataset.action === 'toggle-tip') event.preventDefault();
     const action = actions[button.dataset.action];
     if (!action) return;
     Promise.resolve(action(button)).catch((error) => fail(error.message));
@@ -369,6 +370,14 @@
       disk.enableDogecoinvm = state.settings.enableDogecoinvm;
       try { writeJson(SETTINGS_KEY, disk); } catch { /* The choice still applies for this visit. */ }
       settleChains();
+      render();
+      return;
+    }
+    if (event.target.name === 'fixedReceive') {
+      readSettings();
+      const disk = readJson(SETTINGS_KEY) || {};
+      disk.fixedReceive = state.settings.fixedReceive === true;
+      try { writeJson(SETTINGS_KEY, disk); } catch { /* The choice still applies for this visit. */ }
       render();
       return;
     }
@@ -583,7 +592,7 @@
           Object.values(privateKeys).forEach((key) => key.fill(0));
         }
         const txid = await provider.broadcast(signed.hex);
-        if (plan.change > 0n && state.pub.type === 'hd') {
+        if (plan.change > 0n && state.pub.type === 'hd' && !state.settings.fixedReceive) {
           if (plan.chain === 'dogecoinvm') state.pub.vmChangeIndex = (state.pub.vmChangeIndex || 0) + 1;
           else state.pub.changeIndex = (state.pub.changeIndex || 0) + 1;
           writeJson(PUBLIC_KEY, state.pub);
@@ -650,7 +659,7 @@
           Object.values(privateKeys).forEach((key) => key.fill(0));
         }
         const txid = await provider.broadcast(signed.hex);
-        if (plan.change > 0n && state.pub.type === 'hd') {
+        if (plan.change > 0n && state.pub.type === 'hd' && !state.settings.fixedReceive) {
           if (chain === 'dogecoinvm') state.pub.vmChangeIndex = (state.pub.vmChangeIndex || 0) + 1;
           else state.pub.changeIndex = (state.pub.changeIndex || 0) + 1;
         }
@@ -1043,6 +1052,7 @@
       ? (which === 'dogecoinvm' ? state.pub.vmReceiveIndex : state.pub.receiveIndex)
       : (which === 'dogecoinvm' ? state.pub.vmChangeIndex : state.pub.changeIndex);
     let index = stored || 0;
+    if (branch === 0 && state.settings.fixedReceive) return index;
     let missed = 0;
     let cursor = index;
     while (missed < gap) {
@@ -1137,12 +1147,13 @@
   function currentReceive(chain) {
     if (!state.pub) return { address: '', publicKey: '' };
     if (state.pub.type === 'single') return { chain: 0, index: 0, address: state.pub.address, publicKey: state.pub.publicKey };
-    const index = chain === 'dogecoinvm' ? (state.pub.vmReceiveIndex || 0) : (state.pub.receiveIndex || 0);
+    const savedIndex = chain === 'dogecoinvm' ? (state.pub.vmReceiveIndex || 0) : (state.pub.receiveIndex || 0);
+    const index = state.settings.fixedReceive ? 0 : savedIndex;
     return window.DogeChain.deriveAddress(state.pub.xpub, 0, index);
   }
 
   function changeReceive(chain) {
-    if (state.pub.type === 'single') return currentReceive(chain);
+    if (state.pub.type === 'single' || state.settings.fixedReceive) return currentReceive(chain);
     const index = chain === 'dogecoinvm' ? (state.pub.vmChangeIndex || 0) : (state.pub.changeIndex || 0);
     return window.DogeChain.deriveAddress(state.pub.xpub, 1, index);
   }
@@ -1438,6 +1449,7 @@
       state.settings.enableDogecoin = form.enableDogecoin.checked;
       state.settings.enableDogecoinvm = form.enableDogecoinvm.checked;
     }
+    if (form.fixedReceive) state.settings.fixedReceive = form.fixedReceive.checked;
     state.settings.autolockSeconds = Number(state.settings.autolockSeconds) || 60;
   }
 
@@ -1727,7 +1739,8 @@
     if (state.chainError[chain]) state.error = state.chainError[chain];
     const current = currentReceive(chain);
     const link = window.DogeChain.paymentUri(chain, current.address);
-    const qrNote = note('receive', `${esc(tr('note.receive', { scheme: chain === 'dogecoinvm' ? 'dogecoinvm:' : 'dogecoin:', chain: chainName(chain), wait: chainWait(chain) }))}`);
+    const noteKey = state.settings.fixedReceive ? 'note.receiveFixed' : 'note.receive';
+    const qrNote = note('receive', `${esc(tr(noteKey, { scheme: chain === 'dogecoinvm' ? 'dogecoinvm:' : 'dogecoin:', chain: chainName(chain), wait: chainWait(chain) }))}`);
     return shell(tr('receive.title'), `${chainButtons(chain, false)}${chain === 'dogecoinvm' ? vmHelp() : ''}${qrBlock(link)}${qrNote}${addressField(current.address)}`, 'qr_code_2');
   }
 
@@ -1745,11 +1758,17 @@
 
   function networkChoices() {
     const host = hostChain();
-    if (host) return `<p class="hint">${esc(tr('settings.hostLock', { chain: chainName(host) }))}</p>`;
+    if (host) return `<p class="hint">${esc(tr('settings.hostLock', { chain: chainName(host) }))}</p>${fixedReceiveChoice()}`;
     const dogeOn = chainEnabled('dogecoin');
     const vmOn = chainEnabled('dogecoinvm');
     const card = (name, on, glyph, title) => `<label class="net"><input name="${name}" type="checkbox" role="switch" ${on ? 'checked' : ''}><span class="net-box">${icon(glyph)}<strong>${title}</strong><span class="track" aria-hidden="true"></span></span></label>`;
-    return `<p class="lead">${esc(tr('settings.networks'))}</p><div class="nets">${card('enableDogecoin', dogeOn, 'payments', 'Dogecoin')}${card('enableDogecoinvm', vmOn, 'bolt', 'DogecoinVM')}</div>`;
+    return `<p class="lead">${esc(tr('settings.networks'))}</p><div class="nets">${card('enableDogecoin', dogeOn, 'payments', 'Dogecoin')}${card('enableDogecoinvm', vmOn, 'bolt', 'DogecoinVM')}</div>${fixedReceiveChoice()}`;
+  }
+
+  function fixedReceiveChoice() {
+    if (state.pub && state.pub.type !== 'hd') return '';
+    const on = state.settings.fixedReceive === true;
+    return `<label class="net one-addr"><input name="fixedReceive" type="checkbox" role="switch" ${on ? 'checked' : ''}><span class="net-box"><strong>${esc(tr('settings.fixedReceive'))}</strong>${helpButton('fixedReceive')}<span class="track" aria-hidden="true"></span></span></label>`;
   }
 
   function dogeSettings(s) {

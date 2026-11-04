@@ -55,6 +55,7 @@ DogeI18n.add({
       sendOne: 'Os pagamentos ficam em {chain}. Uma ligação da outra rede não será paga.',
       locked: 'Esta ligação de pagamento já escolhe a cadeia. Não será paga na outra cadeia.',
       receive: 'O QR é uma ligação {scheme}, por isso uma leitura paga {chain}. {wait} O endereço abaixo é só o endereço. Depois de receber um pagamento, o seguinte aparece aqui.',
+      receiveFixed: 'O QR é uma ligação {scheme}, por isso uma leitura paga {chain}. {wait} O endereço abaixo fica igual depois de chegar um pagamento.',
     },
     empty: { node: 'Um nó pode encontrar moedas para gastar, mas não guarda o histórico de um endereço.', none: 'Ainda não há pagamentos nesta carteira.' },
     send: { title: 'Enviar em {chain}' },
@@ -65,6 +66,7 @@ DogeI18n.add({
     settings: {
       title: 'Ligação', hostLock: 'Esta página web mantém a carteira apenas em {chain}. A outra rede e a ponte não estão disponíveis aqui.',
       networks: 'Desligue uma rede para a ocultar. A ponte fica só enquanto as duas estão ligadas. Pelo menos uma fica ligada.',
+      fixedReceive: 'Um só endereço de receção',
       lookup: 'Onde procurar moedas', broadcast: 'Para onde enviar o pagamento assinado', same: 'Igual ao de cima',
       public: 'Exploradores públicos', core: 'Dogecoin Core', dogego: 'DogeGo', meme: 'MemeTracker',
       token: 'Token BlockCypher, opcional', sochain: 'Chave API SoChain', coreUrl: 'URL do Dogecoin Core', dogegoUrl: 'URL do DogeGo',
@@ -144,6 +146,7 @@ DogeI18n.add({
       backup: 'Estas são as palavras que podem restaurar as moedas. Mantenha-as privadas. Oculte este ecrã quando terminar.',
       unlock: 'A palavra-passe abre a carteira. Volta a bloquear após o tempo das definições, que começa em 60 segundos sem toques nem escrita.',
       docs: 'Procure nestas notas como a carteira funciona, onde as chaves ficam, cuidados a ter, e como a juntar a uma página web.',
+      fixedReceive: 'Receber fica no primeiro endereço das 12 palavras. Um pagamento não o muda para o seguinte. O troco de um envio volta a esse mesmo endereço. Os endereços mais antigos continuam a ser verificados.',
       language: 'Escolha o idioma desta carteira. A mesma escolha é usada nesta página web quando partilham um navegador.',
       'pay-choice': 'Este é o pagamento da página web. Leia o QR, copie o endereço, ou abra-o numa carteira que já tenha. Não precisa de criar uma carteira aqui.',
     },

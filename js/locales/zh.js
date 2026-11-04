@@ -55,6 +55,7 @@ DogeI18n.add({
       sendOne: '付款只留在 {chain}。另一网络的链接不会被支付。',
       locked: '这个付款链接已经选定了链。它不会在另一条链上支付。',
       receive: '这个二维码是 {scheme} 链接，扫码会支付 {chain}。{wait} 下面的内容只是地址。收到付款后，下一个地址会出现在这里。',
+      receiveFixed: '这个二维码是 {scheme} 链接，扫码会支付 {chain}。{wait} 收到付款后，下面的地址保持不变。',
     },
     empty: { node: '节点可以找到可花费的币，但不会保存地址历史。', none: '这个钱包还没有付款记录。' },
     send: { title: '在 {chain} 上发送' },
@@ -65,6 +66,7 @@ DogeI18n.add({
     settings: {
       title: '连接', hostLock: '此网站把钱包固定在 {chain}。另一网络和桥在这里不可用。',
       networks: '关闭一个网络即可隐藏它。只有两个都开着时才有桥。至少要保留一个。',
+      fixedReceive: '只用一个收款地址',
       lookup: '在哪里查询币', broadcast: '把签好的付款发到哪里', same: '与上面相同',
       public: '公共浏览器', core: 'Dogecoin Core', dogego: 'DogeGo', meme: 'MemeTracker',
       token: 'BlockCypher 令牌，可选', sochain: 'SoChain API 密钥', coreUrl: 'Dogecoin Core 地址', dogegoUrl: 'DogeGo 地址',
@@ -144,6 +146,7 @@ DogeI18n.add({
       backup: '这些词可以恢复币。请保密。看完后隐藏此页。',
       unlock: '密码用来打开钱包。它会在设置中的时间后再次锁定，默认是 60 秒内没有点按或输入。',
       docs: '在这些说明里搜索钱包如何工作、密钥存在哪里、需要注意什么，以及如何加到网站上。',
+      fixedReceive: '收款停在 12 个词的第一个地址。收到付款后不会换成下一个。发送后的找零也回到这个地址。更早的地址仍会检查。',
       language: '选择此钱包的语言。当网站和钱包使用同一个浏览器时，会使用同一个选择。',
       'pay-choice': '这是网站发起的付款。扫描二维码、复制地址，或在你已有的钱包里打开。不必在这里新建钱包。',
     },

@@ -55,6 +55,7 @@ DogeI18n.add({
       sendOne: 'Payments stay on {chain}. A link for the other network will not be paid.',
       locked: 'This payment link already chooses the chain. It will not be paid on the other chain.',
       receive: 'The QR is a {scheme} link, so a scan pays {chain}. {wait} The address below is only the address. After it receives a payment, the next one appears here.',
+      receiveFixed: 'The QR is a {scheme} link, so a scan pays {chain}. {wait} The address below stays after a payment arrives.',
     },
     empty: { node: 'A node can find coins to spend, but it does not keep an address history.', none: 'No payments found for this wallet yet.' },
     send: { title: 'Send on {chain}' },
@@ -67,6 +68,7 @@ DogeI18n.add({
     settings: {
       title: 'Connection', hostLock: 'This website keeps the wallet on {chain} only. The other network and the bridge are not available here.',
       networks: 'Turn a network off to hide it. The bridge stays only while both are on. At least one stays on.',
+      fixedReceive: 'One receive address',
       lookup: 'Where to look up coins', broadcast: 'Where to send the signed payment', same: 'Same as above',
       public: 'Public explorers', core: 'Dogecoin Core', dogego: 'DogeGo', meme: 'MemeTracker',
       token: 'BlockCypher token, optional', sochain: 'SoChain API key', coreUrl: 'Dogecoin Core URL', dogegoUrl: 'DogeGo URL',
@@ -153,6 +155,7 @@ DogeI18n.add({
       backup: 'These are the words that can restore the coins. Keep them private. Hide this screen when you are done.',
       unlock: 'The password opens the wallet. It locks again after the time in Settings, which starts at 60 seconds with no taps or typing.',
       docs: 'Search these notes for how the wallet works, where keys are stored, what to be careful about, and how to add it to a website.',
+      fixedReceive: 'Receive stays on the first address from the 12 words. A payment does not move it to the next address. Change from a send comes back to that same address. Older addresses are still checked.',
       language: 'Choose the language for this wallet. The same choice is used on this website when they share a browser.',
       'pay-choice': 'This is the payment from the website. Scan the QR, copy the address, or open it in a wallet you already have. You do not need to create a wallet here.',
     },

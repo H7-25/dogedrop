@@ -55,6 +55,7 @@ DogeI18n.add({
       sendOne: 'Les paiements restent sur {chain}. Un lien pour l\'autre réseau ne sera pas payé.',
       locked: 'Ce lien de paiement choisit déjà la chaîne. Il ne sera pas payé sur l\'autre chaîne.',
       receive: 'Le QR est un lien {scheme}, donc un scan paie {chain}. {wait} L\'adresse ci-dessous est seulement l\'adresse. Après un paiement, la suivante apparaît ici.',
+      receiveFixed: 'Le QR est un lien {scheme}, donc un scan paie {chain}. {wait} L\'adresse ci-dessous reste après un paiement.',
     },
     empty: { node: 'Un nœud peut trouver des pièces à dépenser, mais il ne garde pas l\'historique d\'une adresse.', none: 'Aucun paiement trouvé pour ce portefeuille.' },
     send: { title: 'Envoyer sur {chain}' },
@@ -65,6 +66,7 @@ DogeI18n.add({
     settings: {
       title: 'Connexion', hostLock: 'Ce site garde le portefeuille sur {chain} seulement. L\'autre réseau et le pont ne sont pas disponibles ici.',
       networks: 'Éteignez un réseau pour le masquer. Le pont reste seulement tant que les deux sont allumés. Au moins un reste allumé.',
+      fixedReceive: 'Une seule adresse de réception',
       lookup: 'Où chercher les pièces', broadcast: 'Où envoyer le paiement signé', same: 'Comme ci-dessus',
       public: 'Explorateurs publics', core: 'Dogecoin Core', dogego: 'DogeGo', meme: 'MemeTracker',
       token: 'Jeton BlockCypher, facultatif', sochain: 'Clé API SoChain', coreUrl: 'URL Dogecoin Core', dogegoUrl: 'URL DogeGo',
@@ -144,6 +146,7 @@ DogeI18n.add({
       backup: 'Ce sont les mots qui peuvent restaurer les pièces. Gardez-les privés. Masquez cet écran quand vous avez fini.',
       unlock: 'Le mot de passe ouvre le portefeuille. Il se verrouille de nouveau après le délai des réglages, qui commence à 60 secondes sans appui ni saisie.',
       docs: 'Cherchez dans ces notes comment le portefeuille fonctionne, où les clés sont stockées, les précautions, et comment l\'ajouter à un site.',
+      fixedReceive: 'Recevoir reste sur la première adresse des 12 mots. Un paiement ne la fait pas passer à la suivante. La monnaie d\'un envoi revient à cette même adresse. Les adresses plus anciennes sont toujours vérifiées.',
       language: 'Choisissez la langue de ce portefeuille. Le même choix est utilisé sur ce site lorsqu\'ils partagent un navigateur.',
       'pay-choice': 'Ceci est le paiement du site. Scannez le QR, copiez l\'adresse, ou ouvrez-le dans un portefeuille que vous avez déjà. Vous n\'avez pas besoin d\'en créer un ici.',
     },

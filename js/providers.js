@@ -17,6 +17,7 @@
       autolockSeconds: 60,
       enableDogecoin: true,
       enableDogecoinvm: true,
+      fixedReceive: false,
       blockcypherToken: '',
       sochainKey: '',
       coreUrl: '',
