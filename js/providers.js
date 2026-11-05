@@ -14,6 +14,7 @@
       preset: 'dogechain',
       broadcast: 'same',
       fee: 'slow',
+      fixedReceive: false,
       autolockMinutes: 15,
       blockcypherToken: '',
       sochainKey: '',

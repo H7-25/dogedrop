@@ -167,5 +167,6 @@
   "payment.otherWallet": "Pay with another wallet",
   "payment.externalContinue": "Continue in your other wallet. DogeDrop did not send this payment.",
   "debug.sameOrigin": "This site is hosting the wallet itself, so its scripts can reach the wallet. For a real integration, load the wallet from its own address.",
-  "noscript": "DogeDrop needs JavaScript. It still keeps the keys in your browser."
+  "noscript": "DogeDrop needs JavaScript. It still keeps the keys in your browser.",
+  "settings.fixedReceive": "Usa sempre lo stesso indirizzo di ricezione"
 }

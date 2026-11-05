@@ -441,7 +441,7 @@
           Object.values(privateKeys).forEach((key) => key.fill(0));
         }
         const txid = await provider.broadcast(signed.hex);
-        if (plan.change > 0n && state.pub.type === 'hd') {
+        if (plan.change > 0n && state.pub.type === 'hd' && state.settings.fixedReceive !== true) {
           if (chain === 'dogecoinvm') state.pub.vmChangeIndex = (state.pub.vmChangeIndex || 0) + 1;
           else state.pub.changeIndex = (state.pub.changeIndex || 0) + 1;
         }
@@ -683,6 +683,8 @@
       ? (which === 'dogecoinvm' ? state.pub.vmReceiveIndex : state.pub.receiveIndex)
       : (which === 'dogecoinvm' ? state.pub.vmChangeIndex : state.pub.changeIndex);
     let index = stored || 0;
+    // Keep scanning previously used HD addresses even when fixed receive is enabled.
+    // if (branch === 0 && state.settings.fixedReceive === true) return index;
     let missed = 0;
     let cursor = index;
     while (missed < gap) {
@@ -782,12 +784,13 @@
   function currentReceive(chain) {
     if (!state.pub) return { address: '', publicKey: '' };
     if (state.pub.type === 'single') return { chain: 0, index: 0, address: state.pub.address, publicKey: state.pub.publicKey };
-    const index = chain === 'dogecoinvm' ? (state.pub.vmReceiveIndex || 0) : (state.pub.receiveIndex || 0);
+    const savedIndex = chain === 'dogecoinvm' ? (state.pub.vmReceiveIndex || 0) : (state.pub.receiveIndex || 0);
+    const index = state.settings.fixedReceive === true ? 0 : savedIndex;
     return window.DogeChain.deriveAddress(state.pub.xpub, 0, index);
   }
 
   function changeReceive(chain) {
-    if (state.pub.type === 'single') return currentReceive(chain);
+    if (state.pub.type === 'single' || state.settings.fixedReceive === true) return currentReceive(chain);
     const index = chain === 'dogecoinvm' ? (state.pub.vmChangeIndex || 0) : (state.pub.changeIndex || 0);
     return window.DogeChain.deriveAddress(state.pub.xpub, 1, index);
   }
@@ -894,6 +897,7 @@
     const data = new FormData(form);
     for (const [key, value] of data.entries()) state.settings[key] = String(value);
     state.settings.autolockMinutes = Number(state.settings.autolockMinutes) || 0;
+    state.settings.fixedReceive = form.elements.fixedReceive.checked;
   }
 
   function quizIndexes(mnemonic) {
@@ -1881,6 +1885,16 @@
       <form id="settings-form" class="stack" data-action="save-settings">
         ${chainFields}
 
+        <label class="switch">
+          <input
+            type="checkbox"
+            name="fixedReceive"
+            role="switch"
+            ${s.fixedReceive === true ? 'checked' : ''}
+          >
+          <span class="track" aria-hidden="true"></span>
+          <span>${t('settings.fixedReceive')}</span>
+        </label>
         <label>
           ${t('settings.lockAfter')}
           <select name="autolockMinutes">
